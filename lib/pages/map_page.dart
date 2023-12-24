@@ -60,6 +60,18 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
+  Set<Marker> _createMarker() {
+    _initialPosition = LatLng(34.705029, 135.498414);
+    // _initialPosition =
+    //     LatLng(widget.position!.latitude, widget.position!.longitude);
+    return {
+      Marker(
+        markerId: MarkerId("marker_1"),
+        position: LatLng(_initialPosition.latitude, _initialPosition.longitude),
+      ),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,7 +90,7 @@ class _MapPageState extends State<MapPage> {
                     width: MediaQuery.of(context).size.width * 0.8,
                     height: MediaQuery.of(context).size.height * 0.5,
                     child: GoogleMap(
-                      // markers: snapshot.data!,
+                      markers: _createMarker(),
                       mapType: MapType.normal,
                       initialCameraPosition: CameraPosition(
                         target: _initialPosition,

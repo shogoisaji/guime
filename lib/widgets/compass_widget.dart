@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'dart:math' as math;
-
 class CompassWidget extends StatefulWidget {
   const CompassWidget({super.key});
 
@@ -13,13 +11,10 @@ class CompassWidget extends StatefulWidget {
 
 class _CompassWidgetState extends State<CompassWidget> {
   bool _hasPermissions = false;
-  CompassEvent? _lastRead;
-  DateTime? _lastReadAt;
 
   @override
   void initState() {
     super.initState();
-
     _fetchPermissionStatus();
   }
 
@@ -27,12 +22,10 @@ class _CompassWidgetState extends State<CompassWidget> {
   Widget build(BuildContext context) {
     return Container(
       child: Builder(builder: (context) {
-        if (true) {
-          // if (_hasPermissions) {
+        if (_hasPermissions) {
           return Column(
             children: <Widget>[
               SizedBox(height: 150),
-              _buildManualReader(),
               Expanded(child: _buildCompass()),
             ],
           );
@@ -40,44 +33,6 @@ class _CompassWidgetState extends State<CompassWidget> {
           return _buildPermissionSheet();
         }
       }),
-    );
-  }
-
-  Widget _buildManualReader() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: <Widget>[
-          ElevatedButton(
-            child: Text('Read Value'),
-            onPressed: () async {
-              final CompassEvent tmp = await FlutterCompass.events!.first;
-              setState(() {
-                _lastRead = tmp;
-                _lastReadAt = DateTime.now();
-              });
-            },
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    '$_lastRead',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  Text(
-                    '$_lastReadAt',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -90,34 +45,29 @@ class _CompassWidgetState extends State<CompassWidget> {
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
+          return const Center(
             child: CircularProgressIndicator(),
           );
         }
 
         double? direction = snapshot.data!.heading;
 
-        // if direction is null, then device does not support this sensor
-        // show error message
-        if (direction == null)
-          return Center(
+        if (direction == null) {
+          return const Center(
             child: Text("Device does not have sensors !"),
           );
+        }
 
         return Container(
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           alignment: Alignment.center,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
           ),
           child: Text(
             '${direction.toStringAsFixed(0)}°',
-            style: TextStyle(fontSize: 100, color: Colors.white, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 100, color: Colors.red, fontWeight: FontWeight.bold),
           ),
-          // Transform.rotate(
-          //   angle: (direction * (math.pi / 180) * -1),
-          //   child: Image.asset('assets/compass.jpg'),
-          // ),
         );
       },
     );
@@ -127,25 +77,32 @@ class _CompassWidgetState extends State<CompassWidget> {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text('Location Permission Required'),
+        children: [
           ElevatedButton(
-            child: Text('Request Permissions'),
+            child: const Text('コンパスを有効にする'),
             onPressed: () {
-              Permission.locationWhenInUse.request().then((ignored) {
-                _fetchPermissionStatus();
+              Permission.locationWhenInUse.serviceStatus.isEnabled.then((isEnabled) {
+                if (isEnabled) {
+                  // 位置情報サービスが有効な場合、許可をリクエスト
+                  Permission.locationWhenInUse.request().then((ignored) {
+                    _fetchPermissionStatus();
+                  });
+                } else {
+                  // 位置情報サービスが無効な場合、ユーザーにその旨を通知
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Center(
+                        child: Text('位置情報を有効にして下さい',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+                      ),
+                      backgroundColor: Colors.red,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
               });
             },
           ),
-          SizedBox(height: 16),
-          ElevatedButton(
-            child: Text('Open App Settings'),
-            onPressed: () {
-              openAppSettings().then((opened) {
-                //
-              });
-            },
-          )
         ],
       ),
     );
