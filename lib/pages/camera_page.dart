@@ -44,35 +44,45 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          _cameraPreviewWidget(),
-          Column(
-            children: [
-              Expanded(
-                flex: 7,
-                child: Stack(
-                  // fit: StackFit.expand,
-                  children: [
-                    CompassWidget(),
-                    CustomPaint(
-                      painter: MyCustomPainter(),
-                    ),
-                    Positioned(top: 110, child: _cameraTogglesRowWidget())
-                  ],
-                ),
+      body: SafeArea(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned(
+              top: 40,
+              left: 20,
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Icon(Icons.arrow_back, color: Colors.black, size: 36),
               ),
-              Expanded(
-                flex: 3,
-                child: Container(
-                  color: Colors.blue,
-                  child: Center(child: Text('Map')),
+            ),
+            _cameraPreviewWidget(),
+            Column(
+              children: [
+                Expanded(
+                  flex: 7,
+                  child: Stack(
+                    // fit: StackFit.expand,
+                    children: [
+                      CompassWidget(),
+                      CustomPaint(
+                        painter: MyCustomPainter(),
+                      ),
+                      Positioned(top: 110, child: _cameraTogglesRowWidget())
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    color: Colors.blue,
+                    child: Center(child: Text('Map')),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -83,7 +93,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     if (cameraController == null || !cameraController.value.isInitialized) {
       return const Center(
         child: Text(
-          'Tap a camera',
+          'No camera found',
           style: TextStyle(
             color: Colors.black,
             fontSize: 24.0,

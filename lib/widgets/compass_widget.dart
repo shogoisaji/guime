@@ -31,6 +31,7 @@ class _CompassWidgetState extends State<CompassWidget> {
           // if (_hasPermissions) {
           return Column(
             children: <Widget>[
+              SizedBox(height: 150),
               _buildManualReader(),
               Expanded(child: _buildCompass()),
             ],
