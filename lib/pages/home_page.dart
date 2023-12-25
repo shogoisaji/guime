@@ -1,10 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:guime/animations/title_animation.dart';
 import 'package:guime/models/pin_model.dart';
 import 'package:guime/pages/camera_page.dart';
 import 'package:guime/pages/map_page.dart';
+import 'package:guime/services/shared_preferences_helper.dart';
 import 'package:guime/theme/color_theme.dart';
+import 'package:guime/widgets/custom_snackbar.dart';
 import 'package:guime/widgets/home_tile.dart';
+import 'package:guime/widgets/custom_snackbar.dart';
 import 'package:lottie/lottie.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,6 +22,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final TextEditingController _latitudeEditingController = TextEditingController();
+  final TextEditingController _longitudeEditingController = TextEditingController();
   final PageController _pageController = PageController(viewportFraction: 0.5, initialPage: 1);
   PinType _pinType = PinType.blue;
   double _centerLightOpacity = 1.0;
@@ -50,20 +58,29 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+  dispose() {
+    _pageController.removeListener(_updateStateOnScroll);
+    _pageController.dispose();
+    TextEditingController().dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           Container(
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment(-0.5, -0.3),
-                end: Alignment(0.5, 0.3),
-                colors: [
-                  Color(MyColors.darkBlue),
-                  Color(MyColors.darkDarkBlue),
-                ],
-              ),
+              color: Color(MyColors.beige),
+              // gradient: LinearGradient(
+              //   begin: Alignment(-0.5, -0.3),
+              //   end: Alignment(0.5, 0.3),
+              //   colors: [
+              //     Color(MyColors.darkBlue),
+              //     Color(MyColors.darkDarkBlue),
+              //   ],
+              // ),
             ),
             child:
                 // Center Circle Light
@@ -111,27 +128,136 @@ class _HomePageState extends State<HomePage> {
                       crossAxisCount: 2,
                       children: [
                         InkWell(
-                          onTap: () => print('現在地登録'),
+                          onTap: () => showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('現在地登録'),
+                              content: Column(
+                                children: [
+                                  TextField(
+                                    controller: _latitudeEditingController,
+                                    decoration: const InputDecoration(
+                                      labelText: '緯度',
+                                    ),
+                                  ),
+                                  TextField(
+                                    controller: _longitudeEditingController,
+                                    decoration: const InputDecoration(
+                                      labelText: '経度',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('キャンセル'),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    final Pin pin = Pin(
+                                      type: _pinType,
+                                      position: Position(
+                                        latitude: double.parse(_latitudeEditingController.text),
+                                        longitude: double.parse(_longitudeEditingController.text),
+                                        timestamp: DateTime.now(),
+                                        accuracy: 0,
+                                        altitude: 0,
+                                        heading: 0,
+                                        speed: 0,
+                                        speedAccuracy: 0,
+                                        floor: null,
+                                        isMocked: false,
+                                        altitudeAccuracy: 0,
+                                        headingAccuracy: 0,
+                                      ),
+                                      description: '',
+                                      image: '',
+                                    );
+                                    if (_latitudeEditingController.text.isEmpty ||
+                                        _longitudeEditingController.text.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('緯度と経度を入力してください'),
+                                        ),
+                                      );
+                                      return;
+                                    } else if (!RegExp(r'^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}')
+                                            .hasMatch(_latitudeEditingController.text) ||
+                                        !RegExp(r'^-?([1-9]?[1-9]|[1-9]0|1[0-7][0-9]|180)\.{1}\d{1,6}')
+                                            .hasMatch(_longitudeEditingController.text)) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('入力値が正しくありません'),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    final saveType = await SharedPreferencesHelper().savePin(pin);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      customSnackbar('$saveTypeを登録しました', Color(MyColors.darkPurple)),
+                                    );
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('登録'),
+                                ),
+                              ],
+                            ),
+                          ),
                           child: HomeTile(
                             title: '現在地登録',
                             icon: Icons.pin_drop,
                           ),
                         ),
                         InkWell(
-                          onTap: () => print('情報'),
+                          onTap: () async {
+                            final value = await SharedPreferencesHelper().loadPin(_pinType);
+                            if (value == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                customSnackbar(
+                                  '登録されていません',
+                                  Colors.grey,
+                                ),
+                              );
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              customSnackbar(
+                                '(${value.position.latitude}, ${value.position.longitude}))',
+                                Color(MyColors.darkBlue),
+                              ),
+                            );
+                          },
                           child: HomeTile(
                             title: '情報',
                             icon: Icons.info,
                           ),
                         ),
                         InkWell(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CameraPage(cameras: widget.cameras),
-                            ),
-                          ),
-                          child: HomeTile(
+                          onTap: () async {
+                            final Pin? pin = await SharedPreferencesHelper().loadPin(_pinType);
+                            if (pin == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                customSnackbar(
+                                  '登録されていません',
+                                  Colors.grey,
+                                ),
+                              );
+                              return;
+                            }
+                            if (mounted) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CameraPage(
+                                    cameras: widget.cameras,
+                                    pin: pin,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: const HomeTile(
                             title: 'カメラで探す',
                             icon: Icons.camera_alt,
                           ),
@@ -143,7 +269,7 @@ class _HomePageState extends State<HomePage> {
                               builder: (context) => const MapPage(),
                             ),
                           ),
-                          child: HomeTile(
+                          child: const HomeTile(
                             title: 'マップで探す',
                             icon: Icons.map,
                           ),

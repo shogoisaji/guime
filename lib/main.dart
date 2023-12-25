@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:guime/pages/camera_page.dart';
 import 'package:guime/pages/home_page.dart';
+import 'package:guime/services/shared_preferences_helper.dart';
 
 late List<CameraDescription> cameras;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SharedPreferencesHelper.init();
   cameras = await availableCameras();
   SystemChrome.setPreferredOrientations([
     // 画面の向きを縦に固定

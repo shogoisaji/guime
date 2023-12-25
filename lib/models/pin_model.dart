@@ -1,5 +1,10 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:guime/theme/color_theme.dart';
+
+part 'pin_model.freezed.dart';
+part 'pin_model.g.dart';
 
 enum PinType { green, blue, red }
 
@@ -18,42 +23,52 @@ extension PinTypeExtension on PinType {
   }
 }
 
-class Pin {
-  final PinType type;
-  final String position;
-  final String description;
-  final String image;
+@freezed
+class Pin with _$Pin {
+  factory Pin({
+    required PinType type,
+    @PositionConverter() required Position position,
+    required String description,
+    required String image,
+  }) = _Pin;
 
-  Pin({
-    required this.type,
-    required this.position,
-    required this.description,
-    required this.image,
-  });
+  factory Pin.fromJson(Map<String, dynamic> json) => _$PinFromJson(json);
+}
 
-  factory Pin.fromJson(Map<String, dynamic> json) {
-    return Pin(
-      type: json['type'] == 'red'
-          ? PinType.red
-          : json['type'] == 'blue'
-              ? PinType.blue
-              : PinType.green,
-      position: json['position'],
-      description: json['description'],
-      image: json['image'],
+class PositionConverter implements JsonConverter<Position, Map<String, dynamic>> {
+  const PositionConverter();
+
+  @override
+  Position fromJson(Map<String, dynamic> json) {
+    return Position(
+      latitude: json['latitude'] as double,
+      longitude: json['longitude'] as double,
+      timestamp: DateTime.now(),
+      accuracy: 0,
+      altitude: 0,
+      heading: 0,
+      speed: 0,
+      speedAccuracy: 0,
+      floor: null,
+      isMocked: false,
+      altitudeAccuracy: 0,
+      headingAccuracy: 0,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'type': type == PinType.red
-          ? 'red'
-          : type == PinType.blue
-              ? 'blue'
-              : 'green',
-      'position': position,
-      'description': description,
-      'image': image,
-    };
-  }
+  @override
+  Map<String, dynamic> toJson(Position position) => {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'timestamp': position.timestamp.toString(),
+        'accuracy': position.accuracy,
+        'altitude': position.altitude,
+        'heading': position.heading,
+        'speed': position.speed,
+        'speedAccuracy': position.speedAccuracy,
+        'floor': position.floor,
+        'isMocked': position.isMocked,
+        'altitudeAccuracy': position.altitudeAccuracy,
+        'headingAccuracy': position.headingAccuracy,
+      };
 }

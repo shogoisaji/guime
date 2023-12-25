@@ -5,16 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:guime/services/compass.dart';
-import 'package:guime/services/map_service.dart';
-import 'package:guime/widgets/compass_widget.dart';
+import 'package:guime/models/pin_model.dart';
 
 import 'dart:math';
 
 class CameraPage extends StatefulWidget {
   final List<CameraDescription> cameras;
-  const CameraPage({super.key, required this.cameras});
+  final Pin pin;
+  const CameraPage({super.key, required this.cameras, required this.pin});
 
   @override
   State<CameraPage> createState() => _CameraPageState();
@@ -25,8 +23,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   Position? position;
   StreamSubscription<Position>? positionStream;
   double? targetToAngle;
-
-  final sampleCoordinate = const LatLng(34.731278, 135.597188);
+  double? targetToDistance;
 
   @override
   void initState() {
@@ -61,13 +58,20 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   void startPositionStream() {
     print('startPositionStream');
-    Geolocator.getPositionStream().listen(
+    positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+      ),
+    ).listen(
       (Position position) {
         // ２点の座標から角度を計算
         print('position : ${position.latitude} ${position.longitude}');
         setState(() {
           targetToAngle = calculateBearing(
-              position.latitude, position.longitude, sampleCoordinate.latitude, sampleCoordinate.longitude);
+              position.latitude, position.longitude, widget.pin.position.latitude, widget.pin.position.longitude);
+          targetToDistance = calculateDistance(
+              position.latitude, position.longitude, widget.pin.position.latitude, widget.pin.position.longitude);
         });
 
         print('targetToAngle : $targetToAngle');
@@ -95,6 +99,24 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         children: [
           _cameraPreviewWidget(),
           _buildCompass(targetToAngle),
+          // 距離の表示
+          Align(
+            alignment: Alignment.center,
+            child: Container(
+              height: 100,
+              width: 150,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                color: Colors.black.withOpacity(0.6),
+              ),
+              child: Center(
+                child: Text(
+                  targetToDistance != null ? targetToDistance!.toStringAsFixed(0) + 'm' : '',
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
           Column(
             children: [
               Expanded(
@@ -271,6 +293,24 @@ double calculateBearing(double lat1, double lon1, double lat2, double lon2) {
   return bearing;
 }
 
+double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  var lat1Rad = _toRadians(lat1);
+  var lon1Rad = _toRadians(lon1);
+  var lat2Rad = _toRadians(lat2);
+  var lon2Rad = _toRadians(lon2);
+
+  var deltaLat = lat2Rad - lat1Rad;
+  var deltaLon = lon2Rad - lon1Rad;
+
+  var a = sin(deltaLat / 2) * sin(deltaLat / 2) + cos(lat1Rad) * cos(lat2Rad) * sin(deltaLon / 2) * sin(deltaLon / 2);
+  var c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+  const double earthRadius = 6371000; // 地球の半径（メートル）
+  var distance = earthRadius * c;
+
+  return distance;
+}
+
 double _toRadians(double degree) {
   return degree * pi / 180;
 }
@@ -305,7 +345,7 @@ Widget _buildCompass(double? targetToAngle) {
     double difference = angle2 - angle1;
     while (difference < -180) difference += 360;
     while (difference > 180) difference -= 360;
-    return difference;
+    return difference.abs();
   }
 
   return StreamBuilder<CompassEvent>(

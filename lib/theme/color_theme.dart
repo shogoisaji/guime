@@ -6,4 +6,5 @@ class MyColors {
   static const int darkBlue = 0xFF001861;
   static const int darkDarkBlue = 0xFF00002a;
   static const int lightBeige = 0xFFfffaea;
+  static const int beige = 0xFFFFF4D9;
 }
