@@ -6,8 +6,14 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:guime/models/pin_model.dart';
+import 'package:guime/theme/color_theme.dart';
+import 'package:guime/widgets/custom_backbutton.dart';
+import 'package:guime/widgets/lower_pattern_painter.dart';
+import 'package:intl/intl.dart';
 
 import 'dart:math';
+import 'package:rive/rive.dart';
+import 'package:guime/widgets/custom_snackbar.dart';
 
 class CameraPage extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -24,6 +30,21 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   StreamSubscription<Position>? positionStream;
   double? targetToAngle;
   double? targetToDistance;
+
+  SMIInput<double>? _angle;
+  SMIInput<double>? _scaleX;
+  SMIInput<double>? _scaleY;
+
+  void _onRiveInit(Artboard artboard) {
+    final controller = StateMachineController.fromArtboard(
+      artboard,
+      'state',
+    );
+    artboard.addController(controller!);
+    _scaleX = controller.findInput<double>('scaleX') as SMINumber;
+    _scaleY = controller.findInput<double>('scaleY') as SMINumber;
+    _angle = controller.findInput<double>('angle') as SMINumber;
+  }
 
   @override
   void initState() {
@@ -57,7 +78,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   }
 
   void startPositionStream() {
-    print('startPositionStream');
     positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.bestForNavigation,
@@ -66,15 +86,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     ).listen(
       (Position position) {
         // ２点の座標から角度を計算
-        print('position : ${position.latitude} ${position.longitude}');
         setState(() {
           targetToAngle = calculateBearing(
               position.latitude, position.longitude, widget.pin.position.latitude, widget.pin.position.longitude);
           targetToDistance = calculateDistance(
               position.latitude, position.longitude, widget.pin.position.latitude, widget.pin.position.longitude);
         });
-
-        print('targetToAngle : $targetToAngle');
       },
     );
   }
@@ -93,15 +110,44 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final List<Color> _backgroundColors = switch (widget.pin.type) {
+      PinType.green => [
+          const Color(MyColors.lightGreen1),
+          const Color(MyColors.lightGreen2),
+          const Color(MyColors.lightGreen3),
+        ],
+      PinType.blue => [
+          const Color(MyColors.lightBlue1),
+          const Color(MyColors.lightBlue2),
+          const Color(MyColors.lightBlue3),
+        ],
+      PinType.red => [
+          const Color(MyColors.lightRed1),
+          const Color(MyColors.lightRed2),
+          const Color(MyColors.lightRed3),
+        ],
+    };
+    final double w = MediaQuery.of(context).size.width;
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
           _cameraPreviewWidget(),
-          _buildCompass(targetToAngle),
+          Align(
+            alignment: Alignment(0, 01.3),
+            child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[0])),
+          ),
+          Align(
+            alignment: Alignment(0, 1.5),
+            child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[1])),
+          ),
+          Align(
+            alignment: Alignment(0, 1.7),
+            child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[2])),
+          ),
           // 距離の表示
           Align(
-            alignment: Alignment.center,
+            alignment: Alignment(0, -0.5),
             child: Container(
               height: 100,
               width: 150,
@@ -118,34 +164,67 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             ),
           ),
           Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Expanded(
-                flex: 7,
-                child: Stack(
-                  // fit: StackFit.expand,
-                  children: [
-                    // CompassWidget(),
-
-                    // Positioned(top: 110, child: _cameraTogglesRowWidget())
-                  ],
-                ),
+              Text('登録日時', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(
+                DateFormat('yyyy.MM.dd HH:mm').format(widget.pin.position.timestamp),
+                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              Expanded(
-                flex: 3,
-                child: Container(
-                  color: Colors.blue,
-                  child: Center(child: Text('Map')),
-                ),
-              ),
+              const SizedBox(height: 24),
             ],
           ),
-          Positioned(
-            top: 50,
-            left: 10,
-            child: IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: Icon(Icons.arrow_back, color: Colors.white, size: 36),
+          Align(
+            alignment: Alignment(0, 0.47),
+            child: StreamBuilder<CompassEvent>(
+              stream: FlutterCompass.events,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Text('Error reading heading: ${snapshot.error}');
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                double? direction = snapshot.data!.heading;
+                if (direction == null) {
+                  return const Center(
+                    child: Text("Device does not have sensors !"),
+                  );
+                }
+                // print('direction : $direction targetToAngle : $targetToAngle');
+
+                final double angleDifference = calculateAngleDifference(direction, targetToAngle);
+                // print('angleDifference : $angleDifference');
+                if (angleDifference < 0) {
+                  print('angleDifference : ${360 + angleDifference / 3.6}');
+                  _angle?.value = (360 + angleDifference) / 3.6;
+                } else {
+                  _angle?.value = angleDifference / 3.6;
+                }
+
+                _scaleY?.value = 100 - (angleDifference / 1.8).abs();
+                _scaleX?.value = 0;
+
+                return SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    height: 500,
+                    child: RiveAnimation.asset('assets/riv/compass.riv', fit: BoxFit.contain, onInit: _onRiveInit));
+              },
             ),
+          ),
+          Positioned(
+            top: 60,
+            left: 10,
+            child: InkWell(
+                onTap: () {
+                  Navigator.pop(context);
+                },
+                child: customBackButton()),
           ),
         ],
       ),
@@ -181,7 +260,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         return;
       }
 
-      print('onChanged${description.name}');
       _initializeCameraController();
     }
 
@@ -273,6 +351,14 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       setState(() {});
     }
   }
+
+  double calculateAngleDifference(double? angle1, double? angle2) {
+    if (angle1 == null || angle2 == null) return 0;
+    double difference = angle2 - angle1;
+    while (difference < -180) difference += 360;
+    while (difference > 180) difference -= 360;
+    return difference;
+  }
 }
 
 double calculateBearing(double lat1, double lon1, double lat2, double lon2) {
@@ -337,54 +423,4 @@ class MyCustomPainter extends CustomPainter {
   bool shouldRepaint(MyCustomPainter old) {
     return old.strokeWidth != strokeWidth;
   }
-}
-
-Widget _buildCompass(double? targetToAngle) {
-  double calculateAngleDifference(double? angle1, double? angle2) {
-    if (angle1 == null || angle2 == null) return 0;
-    double difference = angle2 - angle1;
-    while (difference < -180) difference += 360;
-    while (difference > 180) difference -= 360;
-    return difference.abs();
-  }
-
-  return StreamBuilder<CompassEvent>(
-    stream: FlutterCompass.events,
-    builder: (context, snapshot) {
-      if (snapshot.hasError) {
-        return Text('Error reading heading: ${snapshot.error}');
-      }
-
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      }
-
-      double? direction = snapshot.data!.heading;
-      if (direction == null) {
-        return const Center(
-          child: Text("Device does not have sensors !"),
-        );
-      }
-      print('direction : $direction targetToAngle : $targetToAngle');
-
-      final double angleDifference = calculateAngleDifference(direction, targetToAngle);
-      print('angleDifference : $angleDifference');
-
-      return CustomPaint(painter: MyCustomPainter(strokeWidth: angleDifference));
-
-      // Container(
-      //   padding: const EdgeInsets.all(16.0),
-      //   alignment: Alignment.center,
-      //   decoration: const BoxDecoration(
-      //     shape: BoxShape.circle,
-      //   ),
-      //   child: Text(
-      //     '${direction.toStringAsFixed(0)}°',
-      //     style: const TextStyle(fontSize: 100, color: Colors.red, fontWeight: FontWeight.bold),
-      //   ),
-      // );
-    },
-  );
 }

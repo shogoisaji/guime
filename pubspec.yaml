@@ -43,6 +43,8 @@ dependencies:
     flutter_launcher_icons: ^0.13.1
     shared_preferences: ^2.2.2
     freezed_annotation:
+    intl: ^0.19.0
+    rive: ^0.12.4
 
 dev_dependencies:
     flutter_test:
@@ -71,6 +73,8 @@ flutter:
     # To add assets to your application, add an assets section, like this:
     assets:
         - assets/lottie/guime_title.json
+        - assets/images/
+        - assets/riv/
 
     # An image asset can refer to one or more resolution-specific "variants", see
     # https://flutter.dev/assets-and-images/#resolution-aware
