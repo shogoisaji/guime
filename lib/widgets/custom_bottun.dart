@@ -25,7 +25,6 @@ Widget customButton({
         width: 120,
         height: 70,
         decoration: BoxDecoration(
-          // color: color != null ? color.withOpacity(0.7) : Colors.grey,
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(

@@ -43,7 +43,7 @@ class PositionConverter implements JsonConverter<Position, Map<String, dynamic>>
     return Position(
       latitude: json['latitude'] as double,
       longitude: json['longitude'] as double,
-      timestamp: DateTime.now(),
+      timestamp: DateTime.parse(json['timestamp']) as DateTime,
       accuracy: 0,
       altitude: 0,
       heading: 0,

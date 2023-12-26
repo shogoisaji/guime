@@ -11,6 +11,7 @@ import 'package:guime/widgets/custom_backbutton.dart';
 import 'package:guime/widgets/loading_widget.dart';
 import 'package:guime/widgets/lower_pattern_painter.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'dart:math';
 import 'package:rive/rive.dart';
@@ -27,6 +28,7 @@ class CameraPage extends StatefulWidget {
 
 class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   late AnimationController _opacityController;
+  late Animation<double> _opacityAnimation;
   CameraController? controller;
   Position? position;
   StreamSubscription<Position>? positionStream;
@@ -59,9 +61,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
     _initializeCameraController();
     startPositionStream();
     _opacityController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _opacityAnimation = CurvedAnimation(parent: _opacityController, curve: Curves.easeInQuart);
     _loading.addListener(() {
       if (!_loading.value) {
-        Future.delayed(const Duration(milliseconds: 1500), () {
+        Future.delayed(const Duration(milliseconds: 2500), () {
           _opacityController.forward().whenComplete(() {
             _opacityController.reset();
             setState(() {
@@ -82,6 +85,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
     super.dispose();
   }
 
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final CameraController? cameraController = controller;
 
@@ -97,7 +101,19 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
     }
   }
 
-  void startPositionStream() {
+  void startPositionStream() async {
+    final PermissionStatus permission = await Permission.location.request();
+    if (permission == PermissionStatus.granted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          customSnackbar(
+            '位置情報の許可が必要です。',
+            const Color(MyColors.red),
+          ),
+        );
+      }
+      return;
+    }
     positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.bestForNavigation,
@@ -106,7 +122,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
     ).listen(
       (Position position) {
         _loading.value = false;
-
         // ２点の座標から角度を計算
         setState(() {
           targetToAngle = calculateBearing(
@@ -121,14 +136,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
   void stopPositionStream() {
     positionStream?.cancel();
   }
-
-  // void _getPosition() async {
-
-  //   position = await MapService().getCurrentPosition();
-  //   print(position);
-  //   final double angle = calculateBearing(position!.latitude, position!.longitude, 34.705029, 135.498414);
-  //   print('angle : $angle');
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -157,40 +164,30 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
           _cameraPreviewWidget(),
 
           Align(
-            alignment: Alignment(0, 01.3),
+            alignment: const Alignment(0, 01.3),
             child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[0])),
           ),
           Align(
-            alignment: Alignment(0, 1.5),
+            alignment: const Alignment(0, 1.5),
             child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[1])),
           ),
           Align(
-            alignment: Alignment(0, 1.7),
+            alignment: const Alignment(0, 1.7),
             child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[2])),
           ),
           // 距離の表示
           Align(
-            alignment: Alignment(0, -0.5),
-            child: Container(
-              height: 100,
-              width: 150,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                color: Colors.black.withOpacity(0.6),
-              ),
-              child: Center(
-                child: Text(
-                  targetToDistance != null ? targetToDistance!.toStringAsFixed(0) + 'm' : '',
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-              ),
+            alignment: const Alignment(0, 0.63),
+            child: Text(
+              targetToDistance != null ? '${targetToDistance!.toStringAsFixed(0)}m' : '',
+              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ),
           Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              const Text('登録日時', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              const Text('Sava Date', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
               Text(
                 DateFormat('yyyy.MM.dd HH:mm').format(widget.pin.position.timestamp),
                 style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
@@ -219,6 +216,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
                     child: Text("Device does not have sensors !"),
                   );
                 }
+                print('direction : $direction');
 
                 final double angleDifference = calculateAngleDifference(direction, targetToAngle);
                 if (angleDifference < 0) {
@@ -239,11 +237,13 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
           ),
           // Loading画面
           AnimatedBuilder(
-            animation: _opacityController,
+            animation: _opacityAnimation,
             builder: (context, child) {
               return Opacity(
-                opacity: 1 - _opacityController.value,
-                child: _visibleLoading ? LoadingWidget(pin: widget.pin) : Container(),
+                opacity: 1 - _opacityAnimation.value,
+                child: _visibleLoading
+                    ? LoadingWidget(type: widget.pin.type, isAttention: true, isCalibration: true)
+                    : Container(),
               );
             },
           ),
@@ -268,7 +268,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
     if (cameraController == null || !cameraController.value.isInitialized) {
       return const Center(
         child: Text(
-          'No camera found',
+          'No camera',
           style: TextStyle(
             color: Colors.black,
             fontSize: 24.0,
@@ -350,8 +350,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
   double calculateAngleDifference(double? angle1, double? angle2) {
     if (angle1 == null || angle2 == null) return 0;
     double difference = angle2 - angle1;
-    while (difference < -180) difference += 360;
-    while (difference > 180) difference -= 360;
+    while (difference < -180) {
+      difference += 360;
+    }
+    while (difference > 180) {
+      difference -= 360;
+    }
     return difference;
   }
 }
@@ -398,24 +402,4 @@ double _toRadians(double degree) {
 
 double _toDegrees(double radian) {
   return radian * 180 / pi;
-}
-
-class MyCustomPainter extends CustomPainter {
-  final double strokeWidth;
-  const MyCustomPainter({required this.strokeWidth});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.red.withOpacity(0.7)
-      ..strokeWidth = strokeWidth * 2
-      ..style = PaintingStyle.stroke;
-    final center = Offset(size.width / 2, 0);
-    final end = Offset(size.width / 2, size.height);
-    canvas.drawLine(center, end, paint);
-  }
-
-  @override
-  bool shouldRepaint(MyCustomPainter old) {
-    return old.strokeWidth != strokeWidth;
-  }
 }

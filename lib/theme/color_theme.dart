@@ -17,4 +17,6 @@ class MyColors {
   static const int lightBeige = 0xFFfffaea;
   static const int beige = 0xFFFFF4D9;
   static const int darkGrey = 0xFF2B4372;
+  static const int orange = 0xFFFFA63C;
+  static const int darkOrange = 0xFFDB7600;
 }

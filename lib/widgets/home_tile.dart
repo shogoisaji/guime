@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:guime/theme/color_theme.dart';
 import 'dart:ui' as ui;
 
 class HomeTile extends StatefulWidget {

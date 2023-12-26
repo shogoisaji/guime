@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:guime/theme/color_theme.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class CompassWidget extends StatefulWidget {
@@ -95,7 +96,7 @@ class _CompassWidgetState extends State<CompassWidget> {
                         child: Text('位置情報を有効にして下さい',
                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
                       ),
-                      backgroundColor: Colors.red,
+                      backgroundColor: Color(MyColors.red),
                       duration: Duration(seconds: 2),
                     ),
                   );

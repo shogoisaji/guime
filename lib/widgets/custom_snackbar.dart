@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:guime/theme/color_theme.dart';
 
 SnackBar customSnackbar(String message, Color color) {
   return SnackBar(
@@ -14,25 +15,27 @@ SnackBar customSnackbar(String message, Color color) {
             color: Colors.white.withOpacity(0.8),
             spreadRadius: 2,
             blurRadius: 2,
-            offset: const Offset(-3, -3),
+            offset: const Offset(-2, -2),
           ),
           BoxShadow(
             color: Colors.black.withOpacity(0.4),
             spreadRadius: 2,
             blurRadius: 2,
-            offset: const Offset(3, 3),
+            offset: const Offset(2, 2),
           ),
         ],
       ),
       child: Center(
-          child:
-              Text(message, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87))),
+          child: Text(message,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(MyColors.darkGrey)))),
     ),
-    backgroundColor: Colors.red[400],
+    backgroundColor: color,
     duration: const Duration(seconds: 1),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(50),
-    ),
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+      topLeft: Radius.circular(50),
+      topRight: Radius.circular(50),
+    )),
     elevation: 5,
   );
 }

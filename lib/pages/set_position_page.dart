@@ -10,6 +10,7 @@ import 'package:guime/theme/color_theme.dart';
 import 'package:guime/widgets/custom_backbutton.dart';
 import 'package:guime/widgets/custom_bottun.dart';
 import 'package:guime/widgets/custom_snackbar.dart';
+import 'package:guime/widgets/loading_widget.dart';
 
 class SetPositionPage extends StatefulWidget {
   final PinType type;
@@ -19,11 +20,15 @@ class SetPositionPage extends StatefulWidget {
   State<SetPositionPage> createState() => _SetPositionPageState();
 }
 
-class _SetPositionPageState extends State<SetPositionPage> {
+class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProviderStateMixin {
   final Completer<GoogleMapController> _mapController = Completer<GoogleMapController>();
+  late AnimationController _opacityController;
+  late Animation<double> _opacityAnimation;
   late LatLng _currentPosition;
   final Set<Marker> _markers = {};
-  bool _loading = true;
+  bool _visibleLoading = true;
+
+  ValueNotifier<bool> _loading = ValueNotifier(true);
 
   Future<void> _determinePosition() async {
     bool serviceEnabled;
@@ -49,10 +54,11 @@ class _SetPositionPageState extends State<SetPositionPage> {
     Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
     setState(() {
       _currentPosition = LatLng(position.latitude, position.longitude);
+      _loading.value = false;
     });
   }
 
-  void _savePosition(double latitude, double longitude) async {
+  Future<String> _savePosition(double latitude, double longitude) async {
     final Pin pin = Pin(
       type: widget.type,
       position: Position(
@@ -74,25 +80,35 @@ class _SetPositionPageState extends State<SetPositionPage> {
     );
 
     final saveType = await SharedPreferencesHelper().savePin(pin);
-    ScaffoldMessenger.of(context).showSnackBar(
-      customSnackbar('$saveTypeを登録しました', Color(MyColors.darkPurple)),
-    );
+    return saveType;
   }
 
   @override
   void initState() {
     super.initState();
-    _determinePosition().then((_) {
-      setState(() {
-        _loading = false;
-      });
+    _opacityController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _opacityAnimation = CurvedAnimation(parent: _opacityController, curve: Curves.easeInQuart);
+
+    _loading.addListener(() {
+      if (!_loading.value) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _opacityController.forward().whenComplete(() {
+            _opacityController.reset();
+            setState(() {
+              _visibleLoading = false;
+            });
+          });
+        });
+      }
     });
+    _determinePosition();
   }
 
   @override
   void dispose() {
-    super.dispose();
+    _opacityController.dispose();
     _markers.clear();
+    super.dispose();
   }
 
   @override
@@ -107,9 +123,9 @@ class _SetPositionPageState extends State<SetPositionPage> {
         body: SafeArea(
       child: Stack(
         children: [
-          _loading
+          _loading.value
               ? const Center(child: CircularProgressIndicator())
-              : Container(
+              : SizedBox(
                   width: double.infinity,
                   height: double.infinity,
                   child: GoogleMap(
@@ -219,16 +235,25 @@ class _SetPositionPageState extends State<SetPositionPage> {
                                                         fontWeight: FontWeight.bold,
                                                         fontSize: 24),
                                                   )),
-                                                  onTapped: () {
-                                                    setState(() {
-                                                      _savePosition(position.latitude, position.longitude);
-                                                      _markers.clear();
+                                                  onTapped: () async {
+                                                    final color = switch (widget.type) {
+                                                      PinType.green => const Color(MyColors.green),
+                                                      PinType.red => const Color(MyColors.red),
+                                                      PinType.blue => const Color(MyColors.blue)
+                                                    };
+                                                    final saveType =
+                                                        await _savePosition(position.latitude, position.longitude);
+                                                    _markers.clear();
+                                                    if (mounted) {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        customSnackbar('${saveType.toUpperCase()} の地点を登録しました', color),
+                                                      );
                                                       Navigator.push(
                                                           context,
                                                           MaterialPageRoute(
                                                             builder: (context) => const HomePage(),
                                                           ));
-                                                    });
+                                                    }
                                                   }),
                                             ],
                                           ),
@@ -258,6 +283,64 @@ class _SetPositionPageState extends State<SetPositionPage> {
                     },
                   ),
                 ),
+          Align(
+            alignment: const Alignment(0, 0.9),
+            child: Container(
+              height: 70,
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: const BorderRadius.all(
+                  Radius.circular(50),
+                ),
+              ),
+              child: Stack(
+                children: [
+                  const Center(
+                    child: Text(
+                      '登録したい地点を長押',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(MyColors.darkBlue),
+                      ),
+                    ),
+                  ),
+                  Opacity(
+                    opacity: 0.8,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(50),
+                      child: Image.asset(
+                        'assets/images/noise.png',
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+          _visibleLoading
+              ?
+              // Loading画面
+              AnimatedBuilder(
+                  animation: _opacityAnimation,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: 1 - _opacityAnimation.value,
+                      child: _visibleLoading
+                          ? LoadingWidget(
+                              type: widget.type,
+                              isAttention: false,
+                              isCalibration: false,
+                            )
+                          : Container(),
+                    );
+                  },
+                )
+              : Container(),
           Positioned(
             top: 30,
             left: 10,

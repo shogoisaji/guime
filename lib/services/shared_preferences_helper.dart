@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:guime/models/pin_model.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesHelper {
@@ -22,14 +21,6 @@ class SharedPreferencesHelper {
     return pin.type.toString().split('.')[1];
   }
 
-  // Future<Map<String, dynamic>?> loadPin(PinType pinType) async {
-  //   if (_prefs == null) {
-  //     await init();
-  //   }
-  //   String? jsonString = _prefs!.getString(pinType.toString().split('.')[1]);
-  //   Map<String, dynamic>? data = jsonString != null ? jsonDecode(jsonString) : null;
-  //   return data;
-  // }
   Future<Pin?> loadPin(PinType pinType) async {
     if (_prefs == null) {
       await init();
@@ -40,5 +31,18 @@ class SharedPreferencesHelper {
       return null;
     }
     return Pin.fromJson(data);
+  }
+
+  Future<Map<String, Pin?>> loadAllPin() async {
+    final Map<String, Pin?> pins = {};
+    if (_prefs == null) {
+      await init();
+    }
+    for (final pinType in PinType.values) {
+      String? jsonString = _prefs!.getString(pinType.toString().split('.')[1]);
+      Map<String, dynamic>? data = jsonString != null ? jsonDecode(jsonString) : null;
+      pins[pinType.toString().split('.')[1]] = data != null ? Pin.fromJson(data) : null;
+    }
+    return pins;
   }
 }

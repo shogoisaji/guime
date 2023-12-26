@@ -1,5 +1,4 @@
-import 'dart:convert';
-
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:guime/animations/title_animation.dart';
@@ -11,27 +10,30 @@ import 'package:guime/services/shared_preferences_helper.dart';
 import 'package:guime/theme/color_theme.dart';
 import 'package:guime/widgets/custom_bottun.dart';
 import 'package:guime/widgets/custom_snackbar.dart';
-import 'package:guime/widgets/home_tile.dart';
-import 'package:guime/widgets/custom_snackbar.dart';
 import 'package:guime/widgets/lower_pattern_painter.dart';
-import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, this.cameras});
-  final cameras;
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final TextEditingController _latitudeEditingController = TextEditingController();
-  final TextEditingController _longitudeEditingController = TextEditingController();
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
   final PageController _pageController = PageController(viewportFraction: 0.45, initialPage: 1);
   PinType _pinType = PinType.blue;
   double _centerLightOpacity = 1.0;
-  List<double> _sizeRates = [0.1, 1.0, 0.5];
+  List<double> _sizeRates = [1.0, 1.0, 1.0];
+  late List<CameraDescription> cameras;
+
+  Map<String, Pin?> _pins = {};
+
+  double _dragPositionY = 0.0;
+
+  bool _isToggleOn = false;
 
 // スクロールに応じて状態を変更する
   void _updateStateOnScroll() {
@@ -78,10 +80,52 @@ class _HomePageState extends State<HomePage> {
 //     }
 //   }
 
+  void _initCamera() async {
+    cameras = await availableCameras();
+  }
+
+  Future<String?> _setCurrentPosition() async {
+    final PermissionStatus permission = await Permission.location.request();
+    if (permission == PermissionStatus.granted) {
+      final Position position = await Geolocator.getCurrentPosition();
+      final saveType = await SharedPreferencesHelper().savePin(
+        Pin(
+          type: _pinType,
+          position: position,
+          description: '',
+          image: '',
+        ),
+      );
+      return saveType;
+    }
+    return null;
+  }
+
   @override
   initState() {
     super.initState();
+    _animationController = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
+    _animationController.addListener(() {
+      setState(() {
+        _dragPositionY = _animationController.value * 110;
+      });
+    });
+    _initCamera();
     _pageController.addListener(_updateStateOnScroll);
+    SharedPreferencesHelper().loadAllPin().then((value) {
+      print(value);
+      setState(() {
+        _pins = value;
+      });
+    });
+  }
+
+  void _resetToggle() {
+    _animationController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
+    setState(() {
+      _isToggleOn = false;
+      _dragPositionY = _animationController.value * 110;
+    });
   }
 
   @override
@@ -94,8 +138,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final double w = MediaQuery.of(context).size.width;
+    final double w = MediaQuery.of(context).size.width > 500 ? 500 : MediaQuery.of(context).size.width;
     final double h = MediaQuery.of(context).size.height;
+
     final List<Color> _backgroundColors = switch (_pinType) {
       PinType.green => [
           const Color(MyColors.lightGreen1),
@@ -130,9 +175,8 @@ class _HomePageState extends State<HomePage> {
             alignment: Alignment(0, 1.5),
             child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[2])),
           ),
-
           Align(
-              alignment: const Alignment(0, -0.7),
+              alignment: const Alignment(0, -1.2),
               child: Opacity(
                 opacity: _centerLightOpacity,
                 child: Container(
@@ -158,232 +202,361 @@ class _HomePageState extends State<HomePage> {
                 ),
               )),
           const Align(
-            alignment: Alignment(0, -0.72),
+            alignment: Alignment(0.0, -1.22),
             child: TitleAnimation(),
           ),
-// 動くLOGOに変える予定！！
-
           SafeArea(
-            child: Column(
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                Expanded(
-                  child: GridView.count(
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    children: [
-                      InkWell(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => SetPositionPage(
-                                    type: _pinType,
-                                  )),
-                          //  showDialog(
-                          //   context: context,
-                          //   builder: (context) => AlertDialog(
-                          //   title: const Text('現在地登録'),
-                          //   content: Column(
-                          //     children: [
-                          //       TextField(
-                          //         controller: _latitudeEditingController,
-                          //         decoration: const InputDecoration(
-                          //           labelText: '緯度',
-                          //         ),
-                          //       ),
-                          //       TextField(
-                          //         controller: _longitudeEditingController,
-                          //         decoration: const InputDecoration(
-                          //           labelText: '経度',
-                          //         ),
-                          //       ),
-                          //     ],
-                          //   ),
-                          //   actions: [
-                          //     TextButton(
-                          //       onPressed: () => Navigator.pop(context),
-                          //       child: const Text('キャンセル'),
-                          //     ),
-                          //     TextButton(
-                          //       onPressed: () async {
-                          //         final Pin pin = Pin(
-                          //           type: _pinType,
-                          //           position: Position(
-                          //             latitude: double.parse(_latitudeEditingController.text),
-                          //             longitude: double.parse(_longitudeEditingController.text),
-                          //             timestamp: DateTime.now(),
-                          //             accuracy: 0,
-                          //             altitude: 0,
-                          //             heading: 0,
-                          //             speed: 0,
-                          //             speedAccuracy: 0,
-                          //             floor: null,
-                          //             isMocked: false,
-                          //             altitudeAccuracy: 0,
-                          //             headingAccuracy: 0,
-                          //           ),
-                          //           description: '',
-                          //           image: '',
-                          //         );
-                          //         if (_latitudeEditingController.text.isEmpty ||
-                          //             _longitudeEditingController.text.isEmpty) {
-                          //           ScaffoldMessenger.of(context).showSnackBar(
-                          //             const SnackBar(
-                          //               content: Text('緯度と経度を入力してください'),
-                          //             ),
-                          //           );
-                          //           return;
-                          //         } else if (!RegExp(r'^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}')
-                          //                 .hasMatch(_latitudeEditingController.text) ||
-                          //             !RegExp(r'^-?([1-9]?[1-9]|[1-9]0|1[0-7][0-9]|180)\.{1}\d{1,6}')
-                          //                 .hasMatch(_longitudeEditingController.text)) {
-                          //           ScaffoldMessenger.of(context).showSnackBar(
-                          //             const SnackBar(
-                          //               content: Text('入力値が正しくありません'),
-                          //             ),
-                          //           );
-                          //           return;
-                          //         }
-                          //         final saveType = await SharedPreferencesHelper().savePin(pin);
-                          //         ScaffoldMessenger.of(context).showSnackBar(
-                          //           customSnackbar('$saveTypeを登録しました', Color(MyColors.darkPurple)),
-                          //         );
-                          //         Navigator.pop(context);
-                          //       },
-                          //       child: const Text('登録'),
-                          //     ),
-                          //   ],
-                          // ),
-                        ),
-                        child: HomeTile(
-                          title: '現在地登録',
-                          icon: Icons.pin_drop,
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () async {
-                          final value = await SharedPreferencesHelper().loadPin(_pinType);
-                          if (value == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              customSnackbar(
-                                '登録されていません',
-                                Colors.grey,
-                              ),
-                            );
-                            return;
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            customSnackbar(
-                              '(${value.position.latitude}, ${value.position.longitude}, ${DateFormat('yyyy.MM.dd HH:mm').format(value.position.timestamp)})',
-                              Color(MyColors.darkBlue),
-                            ),
-                          );
-                        },
-                        child: HomeTile(
-                          title: '情報',
-                          icon: Icons.info,
-                        ),
-                      ),
-                    ],
+                const Align(
+                  alignment: Alignment(0.9, -0.55),
+                  child: Text(
+                    'CURRENT\nPOSITION',
+                    style: TextStyle(
+                      fontSize: 16,
+                      height: 1.1,
+                      fontWeight: FontWeight.bold,
+                      color: Color(MyColors.darkGrey),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 60),
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  margin: const EdgeInsets.symmetric(horizontal: 30),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(32),
-                    color: Colors.black.withOpacity(0.2),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(26),
-                      // color: Color(MyColors.lightBeige),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(MyColors.lightBeige),
-                          blurRadius: 4,
-                          spreadRadius: -0.1,
-                          offset: Offset(0, 0),
-                        ),
-                      ],
-                    ),
-                    child: Column(
+                Align(
+                  alignment: const Alignment(0, -0.3),
+                  child: SizedBox(
+                    // color: Colors.red,
+                    width: w * 0.9,
+                    height: 180,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Find',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(MyColors.darkGrey),
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            customButton(
-                                child: Icon(Icons.map, color: Color(MyColors.lightBeige), size: 48),
-                                color: Color(MyColors.darkGrey),
-                                onTapped: () async {
-                                  final Pin? pin = await SharedPreferencesHelper().loadPin(_pinType);
-                                  if (pin == null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      customSnackbar(
-                                        '登録されていません',
-                                        Colors.grey,
+                            InkWell(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SetPositionPage(
+                                          type: _pinType,
+                                        )),
+                              ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(MyColors.darkGrey),
+                                  borderRadius: BorderRadius.circular(100),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.7),
+                                      spreadRadius: 0.5,
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                padding: const EdgeInsets.all(2),
+                                child: Container(
+                                  width: w * 0.6,
+                                  height: w * 0.15,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(100),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.white.withOpacity(0.3),
+                                        spreadRadius: -0.1,
+                                        blurRadius: 5,
+                                        offset: const Offset(0, -3),
                                       ),
-                                    );
-                                    return;
-                                  } else if (widget.cameras.isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      customSnackbar(
-                                        'カメラを認識できませんでした',
-                                        Colors.grey,
+                                    ],
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'SAVE ON MAP',
+                                      style: TextStyle(
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(MyColors.lightBeige),
                                       ),
-                                    );
-                                    return;
-                                  }
-
-                                  if (mounted) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => MapPage(
-                                          pin: pin,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: w * 0.6,
+                              height: w * 0.15,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(100),
+                                color: _isToggleOn ? const Color(MyColors.darkOrange) : Colors.black26,
+                              ),
+                              padding: const EdgeInsets.all(5),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(100),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          _isToggleOn ? const Color(MyColors.orange) : const Color(MyColors.lightBeige),
+                                      blurRadius: 4,
+                                      spreadRadius: -0.1,
+                                      offset: const Offset(0, 0),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: _isToggleOn
+                                      ? const Text(
+                                          'RELEASE AND SAVE',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(MyColors.darkGrey),
+                                          ),
+                                        )
+                                      : Text(
+                                          _pins[_pinType.toString().split('.')[1]] != null
+                                              ? DateFormat('yyyy.MM.dd HH:mm')
+                                                  .format(_pins[_pinType.toString().split('.')[1]]!.position.timestamp)
+                                              : '-',
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(MyColors.darkGrey),
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  }
-                                }),
-                            customButton(
-                                child: const Icon(Icons.camera_alt, color: Color(MyColors.lightBeige), size: 48),
-                                color: const Color(MyColors.darkGrey),
-                                onTapped: () async {
-                                  final Pin? pin = await SharedPreferencesHelper().loadPin(_pinType);
-                                  if (pin == null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      customSnackbar(
-                                        '登録されていません',
-                                        Colors.grey,
-                                      ),
-                                    );
-                                    return;
-                                  }
-                                  if (mounted) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => CameraPage(
-                                          cameras: widget.cameras,
-                                          pin: pin,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                }),
+                                ),
+                              ),
+                            )
                           ],
                         ),
+// current position save toggle
+                        Container(
+                          width: 70,
+                          height: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(100),
+                            color: _isToggleOn ? Color(MyColors.darkOrange) : Colors.black26,
+                          ),
+                          padding: const EdgeInsets.all(5),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _isToggleOn ? const Color(MyColors.orange) : const Color(MyColors.lightBeige),
+                                  blurRadius: 4,
+                                  spreadRadius: -0.1,
+                                  offset: const Offset(0, 0),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                    top: 90,
+                                    left: 12.5,
+                                    child: Opacity(
+                                      opacity: 1 - _animationController.value,
+                                      child: Image.asset(
+                                        'assets/images/arrow.png',
+                                        width: 35,
+                                        height: 40,
+                                        fit: BoxFit.fill,
+                                      ),
+                                    )),
+                                Positioned(
+                                  top: 5 + _dragPositionY,
+                                  left: 5,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: const Color(MyColors.darkGrey),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.7),
+                                          spreadRadius: 0.5,
+                                          blurRadius: 3,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Container(
+                                      width: 50,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.white.withOpacity(0.3),
+                                            spreadRadius: -0.1,
+                                            blurRadius: 5,
+                                            offset: const Offset(0, -3),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 5 + _dragPositionY,
+                                  left: 5,
+                                  child: Draggable(
+                                    onDragEnd: (details) async {
+                                      if (_isToggleOn) {
+                                        final String? saveType = await _setCurrentPosition();
+                                        if (saveType != null) {
+                                          final color = switch (_pinType) {
+                                            PinType.green => const Color(MyColors.green),
+                                            PinType.red => const Color(MyColors.red),
+                                            PinType.blue => const Color(MyColors.blue)
+                                          };
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              customSnackbar(
+                                                '${saveType.toUpperCase()} に現在地を登録しました',
+                                                color,
+                                              ),
+                                            );
+                                          }
+                                          setState(() {});
+                                        }
+                                      }
+                                      _resetToggle();
+                                    },
+                                    onDragUpdate: (details) {
+                                      _animationController.value = _dragPositionY / 110;
+                                      print(_animationController.value);
+                                      setState(() {
+                                        _dragPositionY += details.delta.dy;
+                                        if (_dragPositionY > 110) _dragPositionY = 110;
+                                        if (_dragPositionY < 0) _dragPositionY = 0;
+                                        if (_dragPositionY > 100) {
+                                          _isToggleOn = true;
+                                        } else {
+                                          _isToggleOn = false;
+                                        }
+                                      });
+                                    },
+                                    feedback: Container(
+                                      width: 50,
+                                      height: 50,
+                                      color: Colors.transparent,
+                                    ),
+                                    child: Container(
+                                      width: 50,
+                                      height: 50,
+                                      color: Colors.transparent,
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        )
                       ],
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: const Alignment(0, 0.95),
+                  child: Container(
+                    height: w * 0.4,
+                    padding: const EdgeInsets.all(5),
+                    margin: const EdgeInsets.symmetric(horizontal: 30),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(32),
+                      color: Colors.black.withOpacity(0.2),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(MyColors.lightBeige),
+                            blurRadius: 4,
+                            spreadRadius: -0.1,
+                            offset: Offset(0, 0),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'FIND',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Color(MyColors.darkGrey),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              customButton(
+                                  child: const Icon(Icons.map, color: Color(MyColors.lightBeige), size: 48),
+                                  color: const Color(MyColors.darkGrey),
+                                  onTapped: () async {
+                                    final Pin? pin = _pins[_pinType.toString().split('.')[1]];
+                                    if (pin == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        customSnackbar(
+                                          '登録されていません',
+                                          const Color(MyColors.red),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    if (mounted) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => MapPage(
+                                            pin: pin,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }),
+                              customButton(
+                                  child: const Icon(Icons.camera_alt, color: Color(MyColors.lightBeige), size: 48),
+                                  color: const Color(MyColors.darkGrey),
+                                  onTapped: () async {
+                                    final Pin? pin = _pins[_pinType.toString().split('.')[1]];
+                                    if (pin == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        customSnackbar(
+                                          '登録されていません',
+                                          const Color(MyColors.red),
+                                        ),
+                                      );
+                                      return;
+                                    } else if (cameras.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        customSnackbar(
+                                          'カメラを認識できませんでした',
+                                          const Color(MyColors.red),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    if (mounted) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => CameraPage(
+                                            cameras: cameras,
+                                            pin: pin,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -399,13 +572,12 @@ class _HomePageState extends State<HomePage> {
                 width: w,
                 height: h,
                 fit: BoxFit.fill,
-                // Center Circle Light
               ),
             ),
           ),
           Align(
             alignment: Alignment(0, 0.4),
-            child: Container(
+            child: SizedBox(
               width: double.infinity,
               height: h / 3.5,
               child: PageView.builder(
@@ -413,16 +585,12 @@ class _HomePageState extends State<HomePage> {
                 controller: _pageController,
                 itemCount: 3,
                 itemBuilder: (context, index) {
-                  print('${_sizeRates[0]},${_sizeRates[1]},${_sizeRates[2]}');
                   return Align(
-                    child: Container(
-                      // color: Colors.orange[200 * (index + 1)],
+                    child: SizedBox(
                       width: 300,
                       height: 300 * _sizeRates[index],
                       child: Image.asset(
                         'assets/images/pin${index + 1}.png',
-                        // width: 200,
-                        // height: 800,
                         fit: BoxFit.fitHeight,
                       ),
                     ),
