@@ -6,6 +6,7 @@ import 'package:guime/animations/title_animation.dart';
 import 'package:guime/models/pin_model.dart';
 import 'package:guime/pages/camera_page.dart';
 import 'package:guime/pages/map_page.dart';
+import 'package:guime/pages/set_position_page.dart';
 import 'package:guime/services/shared_preferences_helper.dart';
 import 'package:guime/theme/color_theme.dart';
 import 'package:guime/widgets/custom_bottun.dart';
@@ -30,7 +31,7 @@ class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController(viewportFraction: 0.45, initialPage: 1);
   PinType _pinType = PinType.blue;
   double _centerLightOpacity = 1.0;
-  List<double> _sizeRates = [1.0, 1.0, 1.0];
+  List<double> _sizeRates = [0.1, 1.0, 0.5];
 
 // スクロールに応じて状態を変更する
   void _updateStateOnScroll() {
@@ -171,81 +172,87 @@ class _HomePageState extends State<HomePage> {
                     crossAxisCount: 2,
                     children: [
                       InkWell(
-                        onTap: () => showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('現在地登録'),
-                            content: Column(
-                              children: [
-                                TextField(
-                                  controller: _latitudeEditingController,
-                                  decoration: const InputDecoration(
-                                    labelText: '緯度',
-                                  ),
-                                ),
-                                TextField(
-                                  controller: _longitudeEditingController,
-                                  decoration: const InputDecoration(
-                                    labelText: '経度',
-                                  ),
-                                ),
-                              ],
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('キャンセル'),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  final Pin pin = Pin(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => SetPositionPage(
                                     type: _pinType,
-                                    position: Position(
-                                      latitude: double.parse(_latitudeEditingController.text),
-                                      longitude: double.parse(_longitudeEditingController.text),
-                                      timestamp: DateTime.now(),
-                                      accuracy: 0,
-                                      altitude: 0,
-                                      heading: 0,
-                                      speed: 0,
-                                      speedAccuracy: 0,
-                                      floor: null,
-                                      isMocked: false,
-                                      altitudeAccuracy: 0,
-                                      headingAccuracy: 0,
-                                    ),
-                                    description: '',
-                                    image: '',
-                                  );
-                                  if (_latitudeEditingController.text.isEmpty ||
-                                      _longitudeEditingController.text.isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('緯度と経度を入力してください'),
-                                      ),
-                                    );
-                                    return;
-                                  } else if (!RegExp(r'^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}')
-                                          .hasMatch(_latitudeEditingController.text) ||
-                                      !RegExp(r'^-?([1-9]?[1-9]|[1-9]0|1[0-7][0-9]|180)\.{1}\d{1,6}')
-                                          .hasMatch(_longitudeEditingController.text)) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('入力値が正しくありません'),
-                                      ),
-                                    );
-                                    return;
-                                  }
-                                  final saveType = await SharedPreferencesHelper().savePin(pin);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    customSnackbar('$saveTypeを登録しました', Color(MyColors.darkPurple)),
-                                  );
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('登録'),
-                              ),
-                            ],
-                          ),
+                                  )),
+                          //  showDialog(
+                          //   context: context,
+                          //   builder: (context) => AlertDialog(
+                          //   title: const Text('現在地登録'),
+                          //   content: Column(
+                          //     children: [
+                          //       TextField(
+                          //         controller: _latitudeEditingController,
+                          //         decoration: const InputDecoration(
+                          //           labelText: '緯度',
+                          //         ),
+                          //       ),
+                          //       TextField(
+                          //         controller: _longitudeEditingController,
+                          //         decoration: const InputDecoration(
+                          //           labelText: '経度',
+                          //         ),
+                          //       ),
+                          //     ],
+                          //   ),
+                          //   actions: [
+                          //     TextButton(
+                          //       onPressed: () => Navigator.pop(context),
+                          //       child: const Text('キャンセル'),
+                          //     ),
+                          //     TextButton(
+                          //       onPressed: () async {
+                          //         final Pin pin = Pin(
+                          //           type: _pinType,
+                          //           position: Position(
+                          //             latitude: double.parse(_latitudeEditingController.text),
+                          //             longitude: double.parse(_longitudeEditingController.text),
+                          //             timestamp: DateTime.now(),
+                          //             accuracy: 0,
+                          //             altitude: 0,
+                          //             heading: 0,
+                          //             speed: 0,
+                          //             speedAccuracy: 0,
+                          //             floor: null,
+                          //             isMocked: false,
+                          //             altitudeAccuracy: 0,
+                          //             headingAccuracy: 0,
+                          //           ),
+                          //           description: '',
+                          //           image: '',
+                          //         );
+                          //         if (_latitudeEditingController.text.isEmpty ||
+                          //             _longitudeEditingController.text.isEmpty) {
+                          //           ScaffoldMessenger.of(context).showSnackBar(
+                          //             const SnackBar(
+                          //               content: Text('緯度と経度を入力してください'),
+                          //             ),
+                          //           );
+                          //           return;
+                          //         } else if (!RegExp(r'^-?([1-8]?[1-9]|[1-9]0)\.{1}\d{1,6}')
+                          //                 .hasMatch(_latitudeEditingController.text) ||
+                          //             !RegExp(r'^-?([1-9]?[1-9]|[1-9]0|1[0-7][0-9]|180)\.{1}\d{1,6}')
+                          //                 .hasMatch(_longitudeEditingController.text)) {
+                          //           ScaffoldMessenger.of(context).showSnackBar(
+                          //             const SnackBar(
+                          //               content: Text('入力値が正しくありません'),
+                          //             ),
+                          //           );
+                          //           return;
+                          //         }
+                          //         final saveType = await SharedPreferencesHelper().savePin(pin);
+                          //         ScaffoldMessenger.of(context).showSnackBar(
+                          //           customSnackbar('$saveTypeを登録しました', Color(MyColors.darkPurple)),
+                          //         );
+                          //         Navigator.pop(context);
+                          //       },
+                          //       child: const Text('登録'),
+                          //     ),
+                          //   ],
+                          // ),
                         ),
                         child: HomeTile(
                           title: '現在地登録',
@@ -276,72 +283,7 @@ class _HomePageState extends State<HomePage> {
                           icon: Icons.info,
                         ),
                       ),
-                      // InkWell(
-                      //   onTap: () async {
-                      //     final Pin? pin = await SharedPreferencesHelper().loadPin(_pinType);
-                      //     if (pin == null) {
-                      //       ScaffoldMessenger.of(context).showSnackBar(
-                      //         customSnackbar(
-                      //           '登録されていません',
-                      //           Colors.grey,
-                      //         ),
-                      //       );
-                      //       return;
-                      //     }
-                      //     if (mounted) {
-                      //       Navigator.push(
-                      //         context,
-                      //         MaterialPageRoute(
-                      //           builder: (context) => CameraPage(
-                      //             cameras: widget.cameras,
-                      //             pin: pin,
-                      //           ),
-                      //         ),
-                      //       );
-                      //     }
-                      //   },
-                      //   child: const HomeTile(
-                      //     title: 'カメラで探す',
-                      //     icon: Icons.camera_alt,
-                      //   ),
-                      // ),
-                      // InkWell(
-                      //   onTap: () => Navigator.push(
-                      //     context,
-                      //     MaterialPageRoute(
-                      //       builder: (context) => const MapPage(),
-                      //     ),
-                      //   ),
-                      //   child: const HomeTile(
-                      //     title: 'マップで探す',
-                      //     icon: Icons.map,
-                      //   ),
-                      // ),
                     ],
-                  ),
-                ),
-                Container(
-                  width: double.infinity,
-                  height: h / 4,
-                  child: PageView.builder(
-                    physics: ClampingScrollPhysics(),
-                    controller: _pageController,
-                    itemCount: 3,
-                    itemBuilder: (context, index) {
-                      return Align(
-                        child: Container(
-                          // color: Colors.orange[200 * (index + 1)],
-                          width: 300,
-                          height: 300 * _sizeRates[index],
-                          child: Image.asset(
-                            'assets/images/pin${index + 1}.png',
-                            // width: 200,
-                            // height: 800,
-                            fit: BoxFit.fitHeight,
-                          ),
-                        ),
-                      );
-                    },
                   ),
                 ),
                 const SizedBox(height: 60),
@@ -458,6 +400,34 @@ class _HomePageState extends State<HomePage> {
                 height: h,
                 fit: BoxFit.fill,
                 // Center Circle Light
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment(0, 0.4),
+            child: Container(
+              width: double.infinity,
+              height: h / 3.5,
+              child: PageView.builder(
+                physics: const ClampingScrollPhysics(),
+                controller: _pageController,
+                itemCount: 3,
+                itemBuilder: (context, index) {
+                  print('${_sizeRates[0]},${_sizeRates[1]},${_sizeRates[2]}');
+                  return Align(
+                    child: Container(
+                      // color: Colors.orange[200 * (index + 1)],
+                      width: 300,
+                      height: 300 * _sizeRates[index],
+                      child: Image.asset(
+                        'assets/images/pin${index + 1}.png',
+                        // width: 200,
+                        // height: 800,
+                        fit: BoxFit.fitHeight,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),

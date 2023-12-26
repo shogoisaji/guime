@@ -75,6 +75,7 @@ flutter:
         - assets/lottie/guime_title.json
         - assets/images/
         - assets/riv/
+        - assets/lottie/
 
     # An image asset can refer to one or more resolution-specific "variants", see
     # https://flutter.dev/assets-and-images/#resolution-aware
@@ -104,6 +105,6 @@ flutter:
 flutter_icons:
     android: true
     ios: true
-    image_path: 'assets/images/bird_icon.png'
+    image_path: 'assets/images/app_icon.png'
     adaptive_icon_background: '#FFCDCD'
-    adaptive_icon_foreground: 'assets/images/bird_icon.png'
+    adaptive_icon_foreground: 'assets/images/app_icon.png'

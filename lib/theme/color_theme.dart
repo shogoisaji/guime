@@ -1,6 +1,6 @@
 class MyColors {
   static const int red = 0xFFff3939;
-  static const int lightRed1 = 0xFFFFDCC7;
+  static const int lightRed1 = 0xFFFFD1BE;
   static const int lightRed2 = 0xFFFFADA2;
   static const int lightRed3 = 0xFFFF7E7E;
   static const int blue = 0xFF0080ff;

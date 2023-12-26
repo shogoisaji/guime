@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:guime/models/pin_model.dart';
 import 'package:guime/theme/color_theme.dart';
 import 'package:guime/widgets/custom_backbutton.dart';
+import 'package:guime/widgets/loading_widget.dart';
 
 class MapPage extends StatefulWidget {
   final Pin pin;
@@ -15,19 +16,41 @@ class MapPage extends StatefulWidget {
   State<MapPage> createState() => _MapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
-  final Completer<GoogleMapController> _controller = Completer<GoogleMapController>();
+class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
+  late AnimationController _opacityController;
+  final Completer<GoogleMapController> _mapController = Completer<GoogleMapController>();
 
   late LatLng _targetPosition;
   late LatLng _currentPosition;
 
-  late bool _loading;
+  // late bool _loading;
+  bool _visibleLoading = true;
+
+  ValueNotifier<bool> _loading = ValueNotifier(true);
 
   @override
   void initState() {
     super.initState();
-    _loading = true;
     _determinePosition();
+    _opacityController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _loading.addListener(() {
+      if (!_loading.value) {
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          _opacityController.forward().whenComplete(() {
+            _opacityController.reset();
+            setState(() {
+              _visibleLoading = false;
+            });
+          });
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _opacityController.dispose();
+    super.dispose();
   }
 
 //   Future _searchLocation() async {
@@ -60,7 +83,7 @@ class _MapPageState extends State<MapPage> {
     Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
     setState(() {
       _currentPosition = LatLng(position.latitude, position.longitude);
-      _loading = false;
+      _loading.value = false;
     });
   }
 
@@ -76,21 +99,12 @@ class _MapPageState extends State<MapPage> {
         position: _targetPosition,
         icon: customIcon,
       ),
-      Marker(
-        markerId: MarkerId("current"),
-        position: _currentPosition,
-      ),
+      // Marker(
+      //   markerId: MarkerId("current"),
+      //   position: _currentPosition,
+      //   visible: false,
+      // ),
     };
-
-    // マーカーが全て表示されるようにビューポートを調整
-    LatLngBounds bounds;
-    if (_currentPosition.latitude > _targetPosition.latitude &&
-        _currentPosition.longitude > _targetPosition.longitude) {
-      bounds = LatLngBounds(southwest: _targetPosition, northeast: _currentPosition);
-    } else {
-      bounds = LatLngBounds(southwest: _currentPosition, northeast: _targetPosition);
-    }
-    _controller.future.then((controller) => controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50)));
 
     return markers;
   }
@@ -100,14 +114,8 @@ class _MapPageState extends State<MapPage> {
       body: SafeArea(
         child: Stack(
           children: [
-            _loading
-                ? Center(
-                    child: Container(
-                        width: 100,
-                        height: 100,
-                        padding: const EdgeInsets.all(15),
-                        child: const CircularProgressIndicator()),
-                  )
+            _loading.value
+                ? Container()
                 : FutureBuilder<Set<Marker>>(
                     future: _createMarker(),
                     builder: (BuildContext context, AsyncSnapshot<Set<Marker>> snapshot) {
@@ -128,13 +136,28 @@ class _MapPageState extends State<MapPage> {
                               zoom: 15.0,
                             ),
                             onMapCreated: (GoogleMapController controller) {
-                              _controller.complete(controller);
+                              if (!_mapController.isCompleted) {
+                                _mapController.complete(controller);
+                              }
                             },
                           ),
                         );
                       }
                     },
                   ),
+            _visibleLoading
+                ?
+                // Loading画面
+                AnimatedBuilder(
+                    animation: _opacityController,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: 1 - _opacityController.value,
+                        child: _visibleLoading ? LoadingWidget(pin: widget.pin) : Container(),
+                      );
+                    },
+                  )
+                : Container(),
             Positioned(
               top: 30,
               left: 10,

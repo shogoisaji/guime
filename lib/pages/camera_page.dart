@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:guime/models/pin_model.dart';
 import 'package:guime/theme/color_theme.dart';
 import 'package:guime/widgets/custom_backbutton.dart';
+import 'package:guime/widgets/loading_widget.dart';
 import 'package:guime/widgets/lower_pattern_painter.dart';
 import 'package:intl/intl.dart';
 
@@ -24,16 +25,21 @@ class CameraPage extends StatefulWidget {
   State<CameraPage> createState() => _CameraPageState();
 }
 
-class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
+class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  late AnimationController _opacityController;
   CameraController? controller;
   Position? position;
   StreamSubscription<Position>? positionStream;
   double? targetToAngle;
   double? targetToDistance;
 
+  bool _visibleLoading = true;
+
   SMIInput<double>? _angle;
   SMIInput<double>? _scaleX;
   SMIInput<double>? _scaleY;
+
+  ValueNotifier<bool> _loading = ValueNotifier(true);
 
   void _onRiveInit(Artboard artboard) {
     final controller = StateMachineController.fromArtboard(
@@ -52,11 +58,25 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _initializeCameraController();
     startPositionStream();
+    _opacityController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _loading.addListener(() {
+      if (!_loading.value) {
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          _opacityController.forward().whenComplete(() {
+            _opacityController.reset();
+            setState(() {
+              _visibleLoading = false;
+            });
+          });
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _opacityController.dispose();
     controller?.dispose();
     stopPositionStream();
     super.dispose();
@@ -85,6 +105,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       ),
     ).listen(
       (Position position) {
+        _loading.value = false;
+
         // ２点の座標から角度を計算
         setState(() {
           targetToAngle = calculateBearing(
@@ -133,6 +155,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         fit: StackFit.expand,
         children: [
           _cameraPreviewWidget(),
+
           Align(
             alignment: Alignment(0, 01.3),
             child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[0])),
@@ -167,16 +190,16 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text('登録日時', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              const Text('登録日時', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
               Text(
                 DateFormat('yyyy.MM.dd HH:mm').format(widget.pin.position.timestamp),
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
             ],
           ),
           Align(
-            alignment: Alignment(0, 0.47),
+            alignment: const Alignment(0, 0.47),
             child: StreamBuilder<CompassEvent>(
               stream: FlutterCompass.events,
               builder: (context, snapshot) {
@@ -196,12 +219,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                     child: Text("Device does not have sensors !"),
                   );
                 }
-                // print('direction : $direction targetToAngle : $targetToAngle');
 
                 final double angleDifference = calculateAngleDifference(direction, targetToAngle);
-                // print('angleDifference : $angleDifference');
                 if (angleDifference < 0) {
-                  print('angleDifference : ${360 + angleDifference / 3.6}');
                   _angle?.value = (360 + angleDifference) / 3.6;
                 } else {
                   _angle?.value = angleDifference / 3.6;
@@ -217,6 +237,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
               },
             ),
           ),
+          // Loading画面
+          AnimatedBuilder(
+            animation: _opacityController,
+            builder: (context, child) {
+              return Opacity(
+                opacity: 1 - _opacityController.value,
+                child: _visibleLoading ? LoadingWidget(pin: widget.pin) : Container(),
+              );
+            },
+          ),
+
           Positioned(
             top: 60,
             left: 10,
@@ -252,41 +283,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
   }
 
-  Widget _cameraTogglesRowWidget() {
-    final List<Widget> toggles = <Widget>[];
-
-    void onChanged(CameraDescription? description) {
-      if (description == null) {
-        return;
-      }
-
-      _initializeCameraController();
-    }
-
-    if (widget.cameras.isEmpty) {
-      SchedulerBinding.instance.addPostFrameCallback((_) async {
-        showInSnackBar('No camera found.');
-      });
-      return const Text('None');
-    } else {
-      for (final CameraDescription cameraDescription in widget.cameras) {
-        toggles.add(
-          SizedBox(
-            width: 90.0,
-            child: RadioListTile<CameraDescription>(
-              title: Icon(Icons.camera_alt),
-              groupValue: controller?.description,
-              value: cameraDescription,
-              onChanged: onChanged,
-            ),
-          ),
-        );
-      }
-    }
-
-    return Row(children: toggles);
-  }
-
   void showInSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
@@ -305,7 +301,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
     controller = cameraController;
 
-    // If the controller is updated then update the UI.
     cameraController.addListener(() {
       if (mounted) {
         setState(() {});

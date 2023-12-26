@@ -29,7 +29,7 @@ SnackBar customSnackbar(String message, Color color) {
               Text(message, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87))),
     ),
     backgroundColor: Colors.red[400],
-    duration: const Duration(seconds: 2),
+    duration: const Duration(seconds: 1),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(50),
     ),
