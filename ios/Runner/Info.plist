@@ -57,6 +57,8 @@
     <string>このアプリは、あなたの位置情報が常に必要です</string>
 
 	<key>NSLocationUsageDescription</key>
-    <string>古いデバイスは位置情報が必要です。</string>
+    <string>古いデバイスは位置情報が必要です。</string> 
+	<key>NSMotionUsageDescription</key>
+	<string>モーションデータは、アプリがコンパス機能をしよするのに必要です。</string>
 </dict>
 </plist>

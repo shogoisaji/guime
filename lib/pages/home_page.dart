@@ -28,9 +28,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   final PageController _pageController = PageController(viewportFraction: 0.38, initialPage: 1);
   PinType _pinType = PinType.blue;
   double _centerLightOpacity = 1.0;
-  final List<double> _pinScale = [0.5, 1.0, 0.5];
+  final List<double> _pinScale = [0.75, 1.0, 0.75];
   final List<double> _pinAngles = [-0.3, 0.0, 0.3];
-  final List<Offset> _pinTranslates = [const Offset(50, 100), const Offset(0, 0), const Offset(-50, 100)];
+  final List<Offset> _pinTranslates = [const Offset(50, 50), const Offset(0, 0), const Offset(-50, 50)];
   late List<CameraDescription> cameras;
   Map<String, Pin?> _pins = {};
   double _dragPositionY = 0.0;
@@ -69,20 +69,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     // pin transform
     if (_pageController.page != null) {
       if (_pageController.page! ~/ 1 == 1) {
-        _pinScale[1] = 1 - (_pageController.page! % 1) / 2;
-        _pinScale[2] = (_pageController.page! % 1) / 2 + 0.5;
+        _pinScale[1] = 1 - (_pageController.page! % 1) / 4;
+        _pinScale[2] = (_pageController.page! % 1) / 4 + 0.75;
         _pinAngles[1] = -(_pageController.page! % 1) / 3;
         _pinAngles[2] = (1 - (_pageController.page! % 1)) / 3;
-        _pinTranslates[1] = Offset((_pageController.page! % 1) * 50, (_pageController.page! % 1) * 100);
-        _pinTranslates[2] = Offset(-50 + (_pageController.page! % 1) * 50, 100 - (_pageController.page! % 1) * 100);
+        _pinTranslates[1] = Offset((_pageController.page! % 1) * 50, (_pageController.page! % 1) * 50);
+        _pinTranslates[2] = Offset(-50 + (_pageController.page! % 1) * 50, 50 - (_pageController.page! % 1) * 50);
       }
       if (_pageController.page! ~/ 1 == 0) {
-        _pinScale[0] = 1 - (_pageController.page! % 1) / 2;
-        _pinScale[1] = (_pageController.page! % 1) / 2 + 0.5;
+        _pinScale[0] = 1 - (_pageController.page! % 1) / 4;
+        _pinScale[1] = (_pageController.page! % 1) / 4 + 0.75;
         _pinAngles[0] = -(_pageController.page! % 1) / 3;
         _pinAngles[1] = (1 - (_pageController.page! % 1)) / 3;
-        _pinTranslates[0] = Offset((_pageController.page! % 1) * 50, (_pageController.page! % 1) * 100);
-        _pinTranslates[1] = Offset(-50 + (_pageController.page! % 1) * 50, 100 - (_pageController.page! % 1) * 100);
+        _pinTranslates[0] = Offset((_pageController.page! % 1) * 50, (_pageController.page! % 1) * 50);
+        _pinTranslates[1] = Offset(-50 + (_pageController.page! % 1) * 50, 50 - (_pageController.page! % 1) * 50);
       }
     }
     if (_pageController.hasClients) {
