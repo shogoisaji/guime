@@ -183,6 +183,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     final double w = MediaQuery.of(context).size.width > 500 ? 500 : MediaQuery.of(context).size.width;
+    final double h = MediaQuery.of(context).size.height;
 
     final List<Color> _backgroundColors = switch (_pinType) {
       PinType.green => [
@@ -249,448 +250,468 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             child: TitleAnimation(width: w),
           ),
           SafeArea(
-            child: Stack(
-              fit: StackFit.expand,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Align(
-                  alignment: const Alignment(0, -0.32),
-                  child: SizedBox(
-                    width: w * 0.85,
-                    height: w * 0.85,
-                    child: Column(
-                      children: [
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              'CURRENT\nPOSITION',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,
-                                height: 1.1,
-                                fontWeight: FontWeight.bold,
-                                color: Color(MyColors.darkGrey),
-                              ),
+                SizedBox(
+                  width: w * 0.85,
+                  height: 225,
+                  child: Column(
+                    children: [
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            'CURRENT\nPOSITION',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              height: 1.1,
+                              fontWeight: FontWeight.bold,
+                              color: Color(MyColors.darkGrey),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        SizedBox(
-                          height: 180,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  InkWell(
-                                    onTap: () async {
-                                      final isLocationGranted = await LocationPermissionsHandler().isGranted;
-                                      if (!isLocationGranted) {
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            customSnackbar(
-                                              '位置情報の許可が必要です',
-                                              const Color(MyColors.red),
-                                            ),
-                                          );
-                                        }
-                                        return;
-                                      }
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        height: 180,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                InkWell(
+                                  onTap: () async {
+                                    final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                    if (!isLocationGranted) {
                                       if (mounted) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) => SetPositionPage(
-                                                    type: _pinType,
-                                                  )),
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          customSnackbar(
+                                            '位置情報の許可が必要です',
+                                            const Color(MyColors.red),
+                                          ),
                                         );
                                       }
-                                    },
+                                      return;
+                                    }
+                                    if (mounted) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => SetPositionPage(
+                                                  type: _pinType,
+                                                )),
+                                      );
+                                    }
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: const Color(MyColors.darkGrey),
+                                      borderRadius: BorderRadius.circular(100),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.7),
+                                          spreadRadius: 0.5,
+                                          blurRadius: 3,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.all(2),
                                     child: Container(
+                                      width: w * 0.6,
+                                      height: w * 0.15,
                                       decoration: BoxDecoration(
-                                        color: const Color(MyColors.darkGrey),
                                         borderRadius: BorderRadius.circular(100),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(0.7),
-                                            spreadRadius: 0.5,
-                                            blurRadius: 3,
-                                            offset: const Offset(0, 1),
+                                            color: Colors.white.withOpacity(0.3),
+                                            spreadRadius: -0.1,
+                                            blurRadius: 5,
+                                            offset: const Offset(0, -3),
                                           ),
                                         ],
                                       ),
-                                      padding: const EdgeInsets.all(2),
+                                      child: const Center(
+                                        child: Text(
+                                          'SAVE ON MAP',
+                                          style: TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(MyColors.lightBeige),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  width: w * 0.6,
+                                  height: w * 0.15,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(100),
+                                    color: _isToggleOn ? const Color(MyColors.darkOrange) : Colors.black26,
+                                  ),
+                                  padding: const EdgeInsets.all(5),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(100),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: _isToggleOn
+                                              ? const Color(MyColors.orange)
+                                              : const Color(MyColors.lightBeige),
+                                          blurRadius: 4,
+                                          spreadRadius: -0.1,
+                                          offset: const Offset(0, 0),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(child: _setDisplayText()),
+                                  ),
+                                )
+                              ],
+                            ),
+                            // current position save toggle
+                            Container(
+                              width: 70,
+                              height: double.infinity,
+                              margin: const EdgeInsets.only(right: 5),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(100),
+                                color: _isToggleOn ? const Color(MyColors.darkOrange) : Colors.black26,
+                              ),
+                              padding: const EdgeInsets.all(5),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(100),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          _isToggleOn ? const Color(MyColors.orange) : const Color(MyColors.lightBeige),
+                                      blurRadius: 4,
+                                      spreadRadius: -0.1,
+                                      offset: const Offset(0, 0),
+                                    ),
+                                  ],
+                                ),
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                        top: 90,
+                                        left: 12.5,
+                                        child: Opacity(
+                                          opacity: 1 - _animationController.value,
+                                          child: Image.asset(
+                                            'assets/images/arrow.png',
+                                            width: 35,
+                                            height: 40,
+                                            fit: BoxFit.fill,
+                                          ),
+                                        )),
+                                    Positioned(
+                                      top: 5 + _dragPositionY,
+                                      left: 5,
                                       child: Container(
-                                        width: w * 0.6,
-                                        height: w * 0.15,
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(100),
+                                          color: const Color(MyColors.darkGrey),
+                                          shape: BoxShape.circle,
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.white.withOpacity(0.3),
-                                              spreadRadius: -0.1,
-                                              blurRadius: 5,
-                                              offset: const Offset(0, -3),
+                                              color: Colors.black.withOpacity(0.7),
+                                              spreadRadius: 0.5,
+                                              blurRadius: 3,
+                                              offset: const Offset(0, 1),
                                             ),
                                           ],
                                         ),
-                                        child: const Center(
-                                          child: Text(
-                                            'SAVE ON MAP',
-                                            style: TextStyle(
-                                              fontSize: 26,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(MyColors.lightBeige),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: w * 0.6,
-                                    height: w * 0.15,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(100),
-                                      color: _isToggleOn ? const Color(MyColors.darkOrange) : Colors.black26,
-                                    ),
-                                    padding: const EdgeInsets.all(5),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(100),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: _isToggleOn
-                                                ? const Color(MyColors.orange)
-                                                : const Color(MyColors.lightBeige),
-                                            blurRadius: 4,
-                                            spreadRadius: -0.1,
-                                            offset: const Offset(0, 0),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Center(child: _setDisplayText()),
-                                    ),
-                                  )
-                                ],
-                              ),
-                              // current position save toggle
-                              Container(
-                                width: 70,
-                                height: double.infinity,
-                                margin: const EdgeInsets.only(right: 5),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(100),
-                                  color: _isToggleOn ? const Color(MyColors.darkOrange) : Colors.black26,
-                                ),
-                                padding: const EdgeInsets.all(5),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(100),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: _isToggleOn
-                                            ? const Color(MyColors.orange)
-                                            : const Color(MyColors.lightBeige),
-                                        blurRadius: 4,
-                                        spreadRadius: -0.1,
-                                        offset: const Offset(0, 0),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Stack(
-                                    children: [
-                                      Positioned(
-                                          top: 90,
-                                          left: 12.5,
-                                          child: Opacity(
-                                            opacity: 1 - _animationController.value,
-                                            child: Image.asset(
-                                              'assets/images/arrow.png',
-                                              width: 35,
-                                              height: 40,
-                                              fit: BoxFit.fill,
-                                            ),
-                                          )),
-                                      Positioned(
-                                        top: 5 + _dragPositionY,
-                                        left: 5,
                                         child: Container(
+                                          width: 50,
+                                          height: 50,
                                           decoration: BoxDecoration(
-                                            color: const Color(MyColors.darkGrey),
                                             shape: BoxShape.circle,
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Colors.black.withOpacity(0.7),
-                                                spreadRadius: 0.5,
-                                                blurRadius: 3,
-                                                offset: const Offset(0, 1),
+                                                color: Colors.white.withOpacity(0.3),
+                                                spreadRadius: -0.1,
+                                                blurRadius: 5,
+                                                offset: const Offset(0, -3),
                                               ),
                                             ],
                                           ),
-                                          child: Container(
-                                            width: 50,
-                                            height: 50,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.white.withOpacity(0.3),
-                                                  spreadRadius: -0.1,
-                                                  blurRadius: 5,
-                                                  offset: const Offset(0, -3),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
                                         ),
                                       ),
-                                      Positioned(
-                                        top: 5 + _dragPositionY,
-                                        left: 5,
-                                        child: Draggable(
-                                          onDragEnd: (details) async {
-                                            if (_isToggleOn) {
-                                              final isLocationGranted = await LocationPermissionsHandler().isGranted;
-                                              if (!isLocationGranted) {
-                                                if (mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    customSnackbar(
-                                                      '位置情報の許可が必要です',
-                                                      const Color(MyColors.red),
-                                                    ),
-                                                  );
-                                                }
-                                                setState(() {
-                                                  _savingCurrentPosition = false;
-                                                });
-                                                _resetToggle();
-                                                return;
-                                              }
-                                              setState(() {
-                                                _savingCurrentPosition = true;
-                                              });
-                                              final String? saveType = await _saveCurrentPosition();
-                                              if (saveType != null) {
-                                                _loadAllPin();
-                                                final color = switch (_pinType) {
-                                                  PinType.green => const Color(MyColors.green),
-                                                  PinType.red => const Color(MyColors.red),
-                                                  PinType.blue => const Color(MyColors.blue)
-                                                };
-                                                if (mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    customSnackbar(
-                                                      '${saveType.toUpperCase()} に現在地を登録しました',
-                                                      color,
-                                                    ),
-                                                  );
-                                                }
-                                              } else if (saveType == null) {
-                                                if (mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    customSnackbar(
-                                                      '位置情報の取得に失敗しました',
-                                                      const Color(MyColors.red),
-                                                    ),
-                                                  );
-                                                }
+                                    ),
+                                    Positioned(
+                                      top: 5 + _dragPositionY,
+                                      left: 5,
+                                      child: Draggable(
+                                        onDragEnd: (details) async {
+                                          if (_isToggleOn) {
+                                            final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                            if (!isLocationGranted) {
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  customSnackbar(
+                                                    '位置情報の許可が必要です',
+                                                    const Color(MyColors.red),
+                                                  ),
+                                                );
                                               }
                                               setState(() {
                                                 _savingCurrentPosition = false;
                                               });
+                                              _resetToggle();
+                                              return;
                                             }
-                                            _savingCurrentPosition = false;
-                                            _resetToggle();
-                                          },
-                                          onDragUpdate: (details) {
-                                            _animationController.value = _dragPositionY / 110;
                                             setState(() {
-                                              _dragPositionY += details.delta.dy;
-                                              if (_dragPositionY > 110) _dragPositionY = 110;
-                                              if (_dragPositionY < 0) _dragPositionY = 0;
-                                              if (_dragPositionY > 100) {
-                                                _isToggleOn = true;
-                                                if (_isFeedback) {
-                                                  HapticFeedback.heavyImpact();
-                                                  _isFeedback = false;
-                                                }
-                                              } else {
-                                                _isToggleOn = false;
-                                                _isFeedback = true;
-                                              }
+                                              _savingCurrentPosition = true;
                                             });
-                                          },
-                                          feedback: Container(
-                                            width: 50,
-                                            height: 50,
-                                            color: Colors.transparent,
-                                          ),
-                                          child: Container(
-                                            width: 50,
-                                            height: 50,
-                                            color: Colors.transparent,
-                                          ),
+                                            final String? saveType = await _saveCurrentPosition();
+                                            if (saveType != null) {
+                                              _loadAllPin();
+                                              final color = switch (_pinType) {
+                                                PinType.green => const Color(MyColors.green),
+                                                PinType.red => const Color(MyColors.red),
+                                                PinType.blue => const Color(MyColors.blue)
+                                              };
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  customSnackbar(
+                                                    '${saveType.toUpperCase()} に現在地を登録しました',
+                                                    color,
+                                                  ),
+                                                );
+                                              }
+                                            } else if (saveType == null) {
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  customSnackbar(
+                                                    '位置情報の取得に失敗しました',
+                                                    const Color(MyColors.red),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                            setState(() {
+                                              _savingCurrentPosition = false;
+                                            });
+                                          }
+                                          _savingCurrentPosition = false;
+                                          _resetToggle();
+                                        },
+                                        onDragUpdate: (details) {
+                                          _animationController.value = _dragPositionY / 110;
+                                          setState(() {
+                                            _dragPositionY += details.delta.dy;
+                                            if (_dragPositionY > 110) _dragPositionY = 110;
+                                            if (_dragPositionY < 0) _dragPositionY = 0;
+                                            if (_dragPositionY > 100) {
+                                              _isToggleOn = true;
+                                              if (_isFeedback) {
+                                                HapticFeedback.heavyImpact();
+                                                _isFeedback = false;
+                                              }
+                                            } else {
+                                              _isToggleOn = false;
+                                              _isFeedback = true;
+                                            }
+                                          });
+                                        },
+                                        feedback: Container(
+                                          width: 50,
+                                          height: 50,
+                                          color: Colors.transparent,
                                         ),
-                                      )
-                                    ],
-                                  ),
+                                        child: Container(
+                                          width: 50,
+                                          height: 50,
+                                          color: Colors.transparent,
+                                        ),
+                                      ),
+                                    )
+                                  ],
                                 ),
-                              )
-                            ],
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: double.infinity,
+                  height: h / 4,
+                  child: PageView.builder(
+                    physics: const ClampingScrollPhysics(),
+                    controller: _pageController,
+                    itemCount: 3,
+                    itemBuilder: (context, index) {
+                      return Align(
+                        child: Transform.scale(
+                          scale: 1.1 * _pinScale[index],
+                          child: Transform.translate(
+                            offset: _pinTranslates[index],
+                            child: Transform.rotate(
+                              angle: _pinAngles[index],
+                              child: Image.asset(
+                                'assets/images/pin${index + 1}.png',
+                                height: 400,
+                                fit: BoxFit.fill,
+                              ),
+                            ),
                           ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Container(
+                  height: w * 0.4,
+                  width: w * 0.9,
+                  padding: const EdgeInsets.all(5),
+                  margin: const EdgeInsets.symmetric(horizontal: 30),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    color: Colors.black.withOpacity(0.2),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(MyColors.lightBeige),
+                          blurRadius: 4,
+                          spreadRadius: -0.1,
+                          offset: Offset(0, 0),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        const Text(
+                          'FIND',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(MyColors.darkGrey),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            customButton(
+                                child: const Icon(Icons.map, color: Color(MyColors.lightBeige), size: 48),
+                                color: const Color(MyColors.darkGrey),
+                                onTapped: () async {
+                                  final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                  if (!isLocationGranted) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        customSnackbar(
+                                          '位置情報の許可が必要です',
+                                          const Color(MyColors.red),
+                                        ),
+                                      );
+                                    }
+                                    return;
+                                  }
+                                  final Pin? pin = _pins[_pinType.toString().split('.')[1]];
+                                  if (mounted) {
+                                    if (pin == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        customSnackbar(
+                                          '登録されていません',
+                                          const Color(MyColors.red),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => MapPage(
+                                          pin: pin,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }),
+                            customButton(
+                                child: const Icon(Icons.camera_alt, color: Color(MyColors.lightBeige), size: 48),
+                                color: const Color(MyColors.darkGrey),
+                                onTapped: () async {
+                                  await CameraPermissionsHandler().request();
+                                  final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                  if (!isLocationGranted) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        customSnackbar(
+                                          '位置情報の許可が必要です',
+                                          const Color(MyColors.red),
+                                        ),
+                                      );
+                                    }
+                                    return;
+                                  }
+                                  final isCameraGranted = await CameraPermissionsHandler().isGranted;
+                                  if (!isCameraGranted) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        customSnackbar(
+                                          'カメラの許可が必要です',
+                                          const Color(MyColors.red),
+                                        ),
+                                      );
+                                    }
+                                    return;
+                                  }
+                                  if (cameras.isEmpty) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        customSnackbar(
+                                          'カメラを認識できませんでした',
+                                          const Color(MyColors.red),
+                                        ),
+                                      );
+                                    }
+                                    return;
+                                  }
+                                  final Pin? pin = _pins[_pinType.toString().split('.')[1]];
+                                  if (mounted) {
+                                    if (pin == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        customSnackbar(
+                                          '登録されていません',
+                                          const Color(MyColors.red),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => CameraPage(
+                                          cameras: cameras,
+                                          pin: pin,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }),
+                          ],
                         ),
                       ],
                     ),
                   ),
                 ),
-                Align(
-                  alignment: const Alignment(0, 0.95),
-                  child: Container(
-                    height: w * 0.4,
-                    width: w * 0.9,
-                    padding: const EdgeInsets.all(5),
-                    margin: const EdgeInsets.symmetric(horizontal: 30),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(32),
-                      color: Colors.black.withOpacity(0.2),
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(26),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(MyColors.lightBeige),
-                            blurRadius: 4,
-                            spreadRadius: -0.1,
-                            offset: Offset(0, 0),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          const Text(
-                            'FIND',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(MyColors.darkGrey),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              customButton(
-                                  child: const Icon(Icons.map, color: Color(MyColors.lightBeige), size: 48),
-                                  color: const Color(MyColors.darkGrey),
-                                  onTapped: () async {
-                                    final isLocationGranted = await LocationPermissionsHandler().isGranted;
-                                    if (!isLocationGranted) {
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          customSnackbar(
-                                            '位置情報の許可が必要です',
-                                            const Color(MyColors.red),
-                                          ),
-                                        );
-                                      }
-                                      return;
-                                    }
-                                    final Pin? pin = _pins[_pinType.toString().split('.')[1]];
-                                    if (mounted) {
-                                      if (pin == null) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          customSnackbar(
-                                            '登録されていません',
-                                            const Color(MyColors.red),
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => MapPage(
-                                            pin: pin,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }),
-                              customButton(
-                                  child: const Icon(Icons.camera_alt, color: Color(MyColors.lightBeige), size: 48),
-                                  color: const Color(MyColors.darkGrey),
-                                  onTapped: () async {
-                                    await CameraPermissionsHandler().request();
-                                    final isLocationGranted = await LocationPermissionsHandler().isGranted;
-                                    if (!isLocationGranted) {
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          customSnackbar(
-                                            '位置情報の許可が必要です',
-                                            const Color(MyColors.red),
-                                          ),
-                                        );
-                                      }
-                                      return;
-                                    }
-                                    final isCameraGranted = await CameraPermissionsHandler().isGranted;
-                                    if (!isCameraGranted) {
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          customSnackbar(
-                                            'カメラの許可が必要です',
-                                            const Color(MyColors.red),
-                                          ),
-                                        );
-                                      }
-                                      return;
-                                    }
-                                    if (cameras.isEmpty) {
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          customSnackbar(
-                                            'カメラを認識できませんでした',
-                                            const Color(MyColors.red),
-                                          ),
-                                        );
-                                      }
-                                      return;
-                                    }
-                                    final Pin? pin = _pins[_pinType.toString().split('.')[1]];
-                                    if (mounted) {
-                                      if (pin == null) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          customSnackbar(
-                                            '登録されていません',
-                                            const Color(MyColors.red),
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => CameraPage(
-                                            cameras: cameras,
-                                            pin: pin,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -702,39 +723,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.fill,
-              ),
-            ),
-          ),
-          Align(
-            alignment: const Alignment(0, 0.48),
-            child: SizedBox(
-              width: double.infinity,
-              height: w / 1,
-              child: PageView.builder(
-                physics: const ClampingScrollPhysics(),
-                controller: _pageController,
-                itemCount: 3,
-                itemBuilder: (context, index) {
-                  return Align(
-                    child: Transform.scale(
-                      scale: _pinScale[index],
-                      child: Transform.translate(
-                        offset: _pinTranslates[index],
-                        child: Container(
-                          width: 300,
-                          height: 300,
-                          child: Transform.rotate(
-                            angle: _pinAngles[index],
-                            child: Image.asset(
-                              'assets/images/pin${index + 1}.png',
-                              fit: BoxFit.fitHeight,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
               ),
             ),
           ),
