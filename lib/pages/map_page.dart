@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:guime/models/pin_model.dart';
+import 'package:guime/services/location_permission_handler.dart';
+import 'package:guime/theme/color_theme.dart';
 import 'package:guime/widgets/custom_backbutton.dart';
+import 'package:guime/widgets/custom_snackbar.dart';
 import 'package:guime/widgets/loading_widget.dart';
 
 class MapPage extends StatefulWidget {
@@ -22,7 +25,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   GoogleMapController? _googleMapController;
 
   late LatLng _targetPosition;
-  late LatLng _currentPosition;
+  LatLng? _currentPosition;
 
   bool _visibleLoading = true;
 
@@ -60,32 +63,26 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   }
 
   Future<void> _determinePosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
+    final isLocationGranted = await LocationPermissionsHandler().isGranted;
+    if (!isLocationGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          customSnackbar(
+            '位置情報の許可が必要です',
+            const Color(MyColors.red),
+          ),
+        );
       }
+      _currentPosition = null;
+      return;
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('Location permissions are permanently denied, we cannot request permissions.');
-    }
-
     Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    if (!mounted) return;
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _loading.value = false;
-    });
+    if (mounted) {
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        _loading.value = false;
+      });
+    }
   }
 
   Future<Set<Marker>> _createMarker() async {
@@ -110,70 +107,72 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Stack(
-          children: [
-            _loading.value
-                ? Container()
-                : FutureBuilder<Set<Marker>>(
-                    future: _createMarker(),
-                    builder: (BuildContext context, AsyncSnapshot<Set<Marker>> snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return const Center(child: Text('エラーが発生しました'));
-                      } else {
-                        return SizedBox(
-                          width: MediaQuery.of(context).size.width,
-                          height: MediaQuery.of(context).size.height,
-                          child: GoogleMap(
-                            myLocationEnabled: true,
-                            markers: snapshot.data ?? <Marker>{},
-                            mapType: MapType.normal,
-                            initialCameraPosition: CameraPosition(
-                              target: _currentPosition,
-                              zoom: 15.0,
-                            ),
-                            onMapCreated: (GoogleMapController controller) {
-                              if (!_mapController.isCompleted) {
-                                _mapController.complete(controller);
-                                _googleMapController = controller;
-                              }
-                            },
-                          ),
-                        );
-                      }
-                    },
+        child: _currentPosition == null
+            ? const Center()
+            : Stack(
+                children: [
+                  _loading.value
+                      ? Container()
+                      : FutureBuilder<Set<Marker>>(
+                          future: _createMarker(),
+                          builder: (BuildContext context, AsyncSnapshot<Set<Marker>> snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return const Center(child: Text('エラーが発生しました'));
+                            } else {
+                              return SizedBox(
+                                width: MediaQuery.of(context).size.width,
+                                height: MediaQuery.of(context).size.height,
+                                child: GoogleMap(
+                                  myLocationEnabled: true,
+                                  markers: snapshot.data ?? <Marker>{},
+                                  mapType: MapType.normal,
+                                  initialCameraPosition: CameraPosition(
+                                    target: _currentPosition!,
+                                    zoom: 16.0,
+                                  ),
+                                  onMapCreated: (GoogleMapController controller) {
+                                    if (!_mapController.isCompleted) {
+                                      _mapController.complete(controller);
+                                      _googleMapController = controller;
+                                    }
+                                  },
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                  _visibleLoading
+                      ?
+                      // Loading画面
+                      AnimatedBuilder(
+                          animation: _opacityAnimation,
+                          builder: (context, child) {
+                            return Opacity(
+                              opacity: 1 - _opacityAnimation.value,
+                              child: _visibleLoading
+                                  ? LoadingWidget(
+                                      type: widget.pin.type,
+                                      isAttention: true,
+                                      isCalibration: false,
+                                    )
+                                  : Container(),
+                            );
+                          },
+                        )
+                      : Container(),
+                  Positioned(
+                    top: 30,
+                    left: 10,
+                    child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: customBackButton()),
                   ),
-            _visibleLoading
-                ?
-                // Loading画面
-                AnimatedBuilder(
-                    animation: _opacityAnimation,
-                    builder: (context, child) {
-                      return Opacity(
-                        opacity: 1 - _opacityAnimation.value,
-                        child: _visibleLoading
-                            ? LoadingWidget(
-                                type: widget.pin.type,
-                                isAttention: true,
-                                isCalibration: false,
-                              )
-                            : Container(),
-                      );
-                    },
-                  )
-                : Container(),
-            Positioned(
-              top: 30,
-              left: 10,
-              child: InkWell(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: customBackButton()),
-            ),
-          ],
-        ),
+                ],
+              ),
       ),
     );
   }

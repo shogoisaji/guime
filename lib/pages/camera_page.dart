@@ -6,13 +6,12 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:guime/models/pin_model.dart';
+import 'package:guime/services/location_permission_handler.dart';
 import 'package:guime/theme/color_theme.dart';
 import 'package:guime/widgets/custom_backbutton.dart';
 import 'package:guime/widgets/loading_widget.dart';
 import 'package:guime/widgets/lower_pattern_painter.dart';
 import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
-
 import 'dart:math';
 import 'package:rive/rive.dart';
 import 'package:guime/widgets/custom_snackbar.dart';
@@ -34,6 +33,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
   StreamSubscription<Position>? positionStream;
   double? targetToAngle;
   double? targetToDistance;
+  AppLifecycleState _lifecycleState = AppLifecycleState.resumed;
 
   bool _visibleLoading = true;
 
@@ -91,9 +91,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _lifecycleState = state;
     final CameraController? cameraController = controller;
 
-    // App state changed before we got the chance to initialize.
     if (cameraController == null || !cameraController.value.isInitialized) {
       return;
     }
@@ -106,8 +106,19 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
   }
 
   void startPositionStream() async {
-    final PermissionStatus permission = await Permission.location.request();
-    if (permission != PermissionStatus.granted) {
+    final isLocationGranted = await LocationPermissionsHandler().isGranted;
+    if (!isLocationGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          customSnackbar(
+            '位置情報の許可が必要です',
+            const Color(MyColors.red),
+          ),
+        );
+      }
+      return;
+    }
+    if (!isLocationGranted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           customSnackbar(
@@ -169,7 +180,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
       body: Stack(
         fit: StackFit.expand,
         children: [
-          _cameraPreviewWidget(),
+          _lifecycleState == AppLifecycleState.resumed ? _cameraPreviewWidget() : Container(),
 
           Align(
             alignment: const Alignment(0, 01.3),
@@ -277,7 +288,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
           children: [
             SizedBox(height: 300),
             Text(
-              'No camera',
+              ' ',
               style: TextStyle(
                 color: Colors.black,
                 fontSize: 24.0,
@@ -287,6 +298,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
           ],
         ),
       );
+    } else if (cameraController.value.hasError) {
+      return Text('カメラエラー: ${cameraController.value.errorDescription}');
     } else {
       return CameraPreview(
         controller!,

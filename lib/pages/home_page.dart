@@ -6,13 +6,14 @@ import 'package:guime/models/pin_model.dart';
 import 'package:guime/pages/camera_page.dart';
 import 'package:guime/pages/map_page.dart';
 import 'package:guime/pages/set_position_page.dart';
+import 'package:guime/services/camera_permission_handler.dart';
+import 'package:guime/services/location_permission_handler.dart';
 import 'package:guime/services/shared_preferences_helper.dart';
 import 'package:guime/theme/color_theme.dart';
 import 'package:guime/widgets/custom_bottun.dart';
 import 'package:guime/widgets/custom_snackbar.dart';
 import 'package:guime/widgets/lower_pattern_painter.dart';
 import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
 
 class HomePage extends StatefulWidget {
@@ -24,31 +25,24 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  final PageController _pageController = PageController(viewportFraction: 0.45, initialPage: 1);
+  final PageController _pageController = PageController(viewportFraction: 0.38, initialPage: 1);
   PinType _pinType = PinType.blue;
   double _centerLightOpacity = 1.0;
-  List<double> _sizeRates = [1.0, 1.0, 1.0];
+  final List<double> _pinScale = [0.5, 1.0, 0.5];
+  final List<double> _pinAngles = [-0.3, 0.0, 0.3];
+  final List<Offset> _pinTranslates = [const Offset(50, 100), const Offset(0, 0), const Offset(-50, 100)];
   late List<CameraDescription> cameras;
-
   Map<String, Pin?> _pins = {};
-
   double _dragPositionY = 0.0;
-
   bool _isToggleOn = false;
-
-  bool _isCameraPermissionGranted = false;
-  bool _isLocationPermissionGranted = false;
-
   bool _isFeedback = false;
   bool _savingCurrentPosition = false;
-
-  String displayText = '';
 
   Widget _setDisplayText() {
     if (_savingCurrentPosition) {
       return const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white));
     } else if (_isToggleOn) {
-      return Text(
+      return const Text(
         'RELEASE AND SAVE',
         style: TextStyle(
           fontSize: 20,
@@ -70,38 +64,27 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     }
   }
 
-  ///
-////
-/////明日かく
-  ///まとめてパーミッションをとる
-  ///
-  ///
-  Future<void> _requestPermissions() async {
-    final cameraStatus = await Permission.camera.request();
-    final locationStatus = await Permission.location.request();
-
-    if (cameraStatus.isGranted) {
-      setState(() {
-        _isCameraPermissionGranted = true;
-      });
-    } else if (cameraStatus.isDenied) {
-      setState(() {
-        _isCameraPermissionGranted = false;
-      });
-    }
-    if (locationStatus.isGranted) {
-      setState(() {
-        _isLocationPermissionGranted = true;
-      });
-    } else if (locationStatus.isDenied) {
-      setState(() {
-        _isLocationPermissionGranted = false;
-      });
-    }
-  }
-
 // スクロールに応じて状態を変更する
   void _updateStateOnScroll() {
+    // pin transform
+    if (_pageController.page != null) {
+      if (_pageController.page! ~/ 1 == 1) {
+        _pinScale[1] = 1 - (_pageController.page! % 1) / 2;
+        _pinScale[2] = (_pageController.page! % 1) / 2 + 0.5;
+        _pinAngles[1] = -(_pageController.page! % 1) / 3;
+        _pinAngles[2] = (1 - (_pageController.page! % 1)) / 3;
+        _pinTranslates[1] = Offset((_pageController.page! % 1) * 50, (_pageController.page! % 1) * 100);
+        _pinTranslates[2] = Offset(-50 + (_pageController.page! % 1) * 50, 100 - (_pageController.page! % 1) * 100);
+      }
+      if (_pageController.page! ~/ 1 == 0) {
+        _pinScale[0] = 1 - (_pageController.page! % 1) / 2;
+        _pinScale[1] = (_pageController.page! % 1) / 2 + 0.5;
+        _pinAngles[0] = -(_pageController.page! % 1) / 3;
+        _pinAngles[1] = (1 - (_pageController.page! % 1)) / 3;
+        _pinTranslates[0] = Offset((_pageController.page! % 1) * 50, (_pageController.page! % 1) * 100);
+        _pinTranslates[1] = Offset(-50 + (_pageController.page! % 1) * 50, 100 - (_pageController.page! % 1) * 100);
+      }
+    }
     if (_pageController.hasClients) {
       setState(() {
         // 中央の光の透明度を更新
@@ -128,13 +111,28 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   Future<String?> _saveCurrentPosition() async {
-    final PermissionStatus permission = await Permission.location.request();
-    if (permission == PermissionStatus.granted) {
+    final isLocationGranted = await LocationPermissionsHandler().isGranted;
+    if (isLocationGranted) {
       final Position position = await Geolocator.getCurrentPosition();
+      final DateTime timestampJST = position.timestamp.toLocal();
+      final Position positionJST = Position(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        timestamp: timestampJST,
+        accuracy: position.accuracy,
+        altitude: position.altitude,
+        heading: position.heading,
+        speed: position.speed,
+        speedAccuracy: position.speedAccuracy,
+        floor: position.floor,
+        isMocked: position.isMocked,
+        altitudeAccuracy: position.altitudeAccuracy,
+        headingAccuracy: position.headingAccuracy,
+      );
       final saveType = await SharedPreferencesHelper().savePin(
         Pin(
           type: _pinType,
-          position: position,
+          position: positionJST,
           description: '',
           image: '',
         ),
@@ -144,10 +142,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return null;
   }
 
+  Future<void> _loadAllPin() async {
+    final Map<String, Pin?> pins = await SharedPreferencesHelper().loadAllPin();
+    setState(() {
+      _pins = pins;
+    });
+  }
+
   @override
   initState() {
     super.initState();
-    _requestPermissions();
+    LocationPermissionsHandler().request();
     _animationController = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
     _animationController.addListener(() {
       setState(() {
@@ -156,12 +161,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     });
     _initCamera();
     _pageController.addListener(_updateStateOnScroll);
-    SharedPreferencesHelper().loadAllPin().then((value) {
-      print(value);
-      setState(() {
-        _pins = value;
-      });
-    });
+    _loadAllPin();
   }
 
   void _resetToggle() {
@@ -285,19 +285,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                 children: [
                                   InkWell(
                                     onTap: () async {
-                                      if (!_isLocationPermissionGranted) {
-                                        final locationStatus = await Permission.location.request();
-                                        if (locationStatus.isDenied) {
-                                          if (mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              customSnackbar(
-                                                '位置情報の許可が必要です',
-                                                const Color(MyColors.red),
-                                              ),
-                                            );
-                                          }
-                                          return;
+                                      final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                      if (!isLocationGranted) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            customSnackbar(
+                                              '位置情報の許可が必要です',
+                                              const Color(MyColors.red),
+                                            ),
+                                          );
                                         }
+                                        return;
                                       }
                                       if (mounted) {
                                         Navigator.push(
@@ -454,26 +452,28 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                         child: Draggable(
                                           onDragEnd: (details) async {
                                             if (_isToggleOn) {
-                                              if (!_isLocationPermissionGranted) {
-                                                final locationStatus = await Permission.location.request();
-                                                if (locationStatus.isDenied) {
-                                                  if (mounted) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      customSnackbar(
-                                                        '位置情報の許可が必要です',
-                                                        const Color(MyColors.red),
-                                                      ),
-                                                    );
-                                                  }
-                                                  _resetToggle();
-                                                  return;
+                                              final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                              if (!isLocationGranted) {
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    customSnackbar(
+                                                      '位置情報の許可が必要です',
+                                                      const Color(MyColors.red),
+                                                    ),
+                                                  );
                                                 }
+                                                setState(() {
+                                                  _savingCurrentPosition = false;
+                                                });
+                                                _resetToggle();
+                                                return;
                                               }
                                               setState(() {
                                                 _savingCurrentPosition = true;
                                               });
                                               final String? saveType = await _saveCurrentPosition();
                                               if (saveType != null) {
+                                                _loadAllPin();
                                                 final color = switch (_pinType) {
                                                   PinType.green => const Color(MyColors.green),
                                                   PinType.red => const Color(MyColors.red),
@@ -484,6 +484,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                                     customSnackbar(
                                                       '${saveType.toUpperCase()} に現在地を登録しました',
                                                       color,
+                                                    ),
+                                                  );
+                                                }
+                                              } else if (saveType == null) {
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    customSnackbar(
+                                                      '位置情報の取得に失敗しました',
+                                                      const Color(MyColors.red),
                                                     ),
                                                   );
                                                 }
@@ -560,146 +569,120 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                           ),
                         ],
                       ),
-                      child: Stack(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          Container(
-                              width: double.infinity,
-                              height: double.infinity,
-                              alignment: Alignment.topRight,
-                              padding: const EdgeInsets.only(top: 4, right: 4),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  _isLocationPermissionGranted
-                                      ? Icon(Icons.location_on, color: Colors.blue.withOpacity(0.3), size: 32)
-                                      : Icon(Icons.location_off, color: Colors.blue.withOpacity(0.3), size: 32),
-                                  const SizedBox(width: 8),
-                                  _isCameraPermissionGranted
-                                      ? Icon(Icons.camera_alt, color: Colors.blue.withOpacity(0.3), size: 32)
-                                      : Icon(Icons.cancel, color: Colors.blue.withOpacity(0.3), size: 32)
-                                ],
-                              )),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          const Text(
+                            'FIND',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Color(MyColors.darkGrey),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              const Text(
-                                'FIND',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(MyColors.darkGrey),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  customButton(
-                                      child: const Icon(Icons.map, color: Color(MyColors.lightBeige), size: 48),
-                                      color: const Color(MyColors.darkGrey),
-                                      onTapped: () async {
-                                        if (!_isLocationPermissionGranted) {
-                                          final locationStatus = await Permission.location.request();
-                                          if (locationStatus.isDenied) {
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                customSnackbar(
-                                                  '位置情報の許可が必要です',
-                                                  const Color(MyColors.red),
-                                                ),
-                                              );
-                                            }
-                                            return;
-                                          }
-                                        }
-                                        final Pin? pin = _pins[_pinType.toString().split('.')[1]];
-                                        if (mounted) {
-                                          if (pin == null) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              customSnackbar(
-                                                '登録されていません',
-                                                const Color(MyColors.red),
-                                              ),
-                                            );
-                                            return;
-                                          }
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => MapPage(
-                                                pin: pin,
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      }),
-                                  customButton(
-                                      child: const Icon(Icons.camera_alt, color: Color(MyColors.lightBeige), size: 48),
-                                      color: const Color(MyColors.darkGrey),
-                                      onTapped: () async {
-                                        if (!_isLocationPermissionGranted) {
-                                          final locationStatus = await Permission.location.request();
-                                          if (locationStatus.isDenied) {
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                customSnackbar(
-                                                  '位置情報の許可が必要です',
-                                                  const Color(MyColors.red),
-                                                ),
-                                              );
-                                            }
-                                            return;
-                                          }
-                                        }
-                                        if (!_isCameraPermissionGranted) {
-                                          final cameraStatus = await Permission.camera.request();
-                                          if (cameraStatus.isDenied) {
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                customSnackbar(
-                                                  'カメラの許可が必要です',
-                                                  const Color(MyColors.red),
-                                                ),
-                                              );
-                                            }
-                                            return;
-                                          }
-                                        }
-                                        if (cameras.isEmpty) {
-                                          if (mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              customSnackbar(
-                                                'カメラを認識できませんでした',
-                                                const Color(MyColors.red),
-                                              ),
-                                            );
-                                          }
-                                          return;
-                                        }
-                                        final Pin? pin = _pins[_pinType.toString().split('.')[1]];
-                                        if (mounted) {
-                                          if (pin == null) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              customSnackbar(
-                                                '登録されていません',
-                                                const Color(MyColors.red),
-                                              ),
-                                            );
-                                            return;
-                                          }
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => CameraPage(
-                                                cameras: cameras,
-                                                pin: pin,
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      }),
-                                ],
-                              ),
+                              customButton(
+                                  child: const Icon(Icons.map, color: Color(MyColors.lightBeige), size: 48),
+                                  color: const Color(MyColors.darkGrey),
+                                  onTapped: () async {
+                                    final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                    if (!isLocationGranted) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          customSnackbar(
+                                            '位置情報の許可が必要です',
+                                            const Color(MyColors.red),
+                                          ),
+                                        );
+                                      }
+                                      return;
+                                    }
+                                    final Pin? pin = _pins[_pinType.toString().split('.')[1]];
+                                    if (mounted) {
+                                      if (pin == null) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          customSnackbar(
+                                            '登録されていません',
+                                            const Color(MyColors.red),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => MapPage(
+                                            pin: pin,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }),
+                              customButton(
+                                  child: const Icon(Icons.camera_alt, color: Color(MyColors.lightBeige), size: 48),
+                                  color: const Color(MyColors.darkGrey),
+                                  onTapped: () async {
+                                    await CameraPermissionsHandler().request();
+                                    final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                    if (!isLocationGranted) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          customSnackbar(
+                                            '位置情報の許可が必要です',
+                                            const Color(MyColors.red),
+                                          ),
+                                        );
+                                      }
+                                      return;
+                                    }
+                                    final isCameraGranted = await CameraPermissionsHandler().isGranted;
+                                    if (!isCameraGranted) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          customSnackbar(
+                                            'カメラの許可が必要です',
+                                            const Color(MyColors.red),
+                                          ),
+                                        );
+                                      }
+                                      return;
+                                    }
+                                    if (cameras.isEmpty) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          customSnackbar(
+                                            'カメラを認識できませんでした',
+                                            const Color(MyColors.red),
+                                          ),
+                                        );
+                                      }
+                                      return;
+                                    }
+                                    final Pin? pin = _pins[_pinType.toString().split('.')[1]];
+                                    if (mounted) {
+                                      if (pin == null) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          customSnackbar(
+                                            '登録されていません',
+                                            const Color(MyColors.red),
+                                          ),
+                                        );
+                                        return;
+                                      }
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => CameraPage(
+                                            cameras: cameras,
+                                            pin: pin,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }),
                             ],
                           ),
                         ],
@@ -733,12 +716,21 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 itemCount: 3,
                 itemBuilder: (context, index) {
                   return Align(
-                    child: SizedBox(
-                      width: 300,
-                      height: 300 * _sizeRates[index],
-                      child: Image.asset(
-                        'assets/images/pin${index + 1}.png',
-                        fit: BoxFit.fitHeight,
+                    child: Transform.scale(
+                      scale: _pinScale[index],
+                      child: Transform.translate(
+                        offset: _pinTranslates[index],
+                        child: Container(
+                          width: 300,
+                          height: 300,
+                          child: Transform.rotate(
+                            angle: _pinAngles[index],
+                            child: Image.asset(
+                              'assets/images/pin${index + 1}.png',
+                              fit: BoxFit.fitHeight,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   );

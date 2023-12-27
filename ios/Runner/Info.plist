@@ -46,12 +46,17 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>your usage description here</string>
+	<string>カメラへのアクセスを許可することで、カメラで探すが利用できます。</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>your usage description here</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>このアプリは、あなたの位置情報が必要です。</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>このアプリは、あなたの位置情報が常に必要です。</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>このアプリは、あなたの位置情報が常に必要です</string>
+
+	<key>NSLocationUsageDescription</key>
+    <string>古いデバイスは位置情報が必要です。</string>
 </dict>
 </plist>

@@ -30,6 +30,7 @@ class _TitleAnimationState extends State<TitleAnimation> with TickerProviderStat
   @override
   void dispose() {
     _animationController.dispose();
+    _lottieAnimation.dispose();
     super.dispose();
   }
 
