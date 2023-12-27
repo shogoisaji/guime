@@ -19,6 +19,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   late AnimationController _opacityController;
   late Animation<double> _opacityAnimation;
   final Completer<GoogleMapController> _mapController = Completer<GoogleMapController>();
+  GoogleMapController? _googleMapController;
 
   late LatLng _targetPosition;
   late LatLng _currentPosition;
@@ -33,23 +34,28 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     _determinePosition();
     _opacityController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _opacityAnimation = CurvedAnimation(parent: _opacityController, curve: Curves.easeInQuart);
-    _loading.addListener(() {
-      if (!_loading.value) {
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          _opacityController.forward().whenComplete(() {
-            _opacityController.reset();
-            setState(() {
-              _visibleLoading = false;
-            });
+    _loading.addListener(_loadingListener);
+  }
+
+  void _loadingListener() {
+    if (!_loading.value) {
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        _opacityController.forward().whenComplete(() {
+          _opacityController.reset();
+          setState(() {
+            _visibleLoading = false;
           });
         });
-      }
-    });
+      });
+    }
   }
 
   @override
   void dispose() {
+    _loading.removeListener(_loadingListener);
     _opacityController.dispose();
+    _googleMapController?.dispose();
     super.dispose();
   }
 
@@ -75,6 +81,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     }
 
     Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    if (!mounted) return;
     setState(() {
       _currentPosition = LatLng(position.latitude, position.longitude);
       _loading.value = false;
@@ -129,6 +136,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                             onMapCreated: (GoogleMapController controller) {
                               if (!_mapController.isCompleted) {
                                 _mapController.complete(controller);
+                                _googleMapController = controller;
                               }
                             },
                           ),

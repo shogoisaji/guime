@@ -52,10 +52,12 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
     }
 
     Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _loading.value = false;
-    });
+    if (mounted) {
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        _loading.value = false;
+      });
+    }
   }
 
   Future<String> _savePosition(double latitude, double longitude) async {
@@ -88,25 +90,29 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
     super.initState();
     _opacityController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _opacityAnimation = CurvedAnimation(parent: _opacityController, curve: Curves.easeInQuart);
+    _loading.addListener(_loadingListener);
 
-    _loading.addListener(() {
-      if (!_loading.value) {
-        Future.delayed(const Duration(milliseconds: 500), () {
-          _opacityController.forward().whenComplete(() {
-            _opacityController.reset();
-            setState(() {
-              _visibleLoading = false;
-            });
+    _determinePosition();
+  }
+
+  void _loadingListener() {
+    if (!_loading.value) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (!mounted) return;
+        _opacityController.forward().whenComplete(() {
+          _opacityController.reset();
+          setState(() {
+            _visibleLoading = false;
           });
         });
-      }
-    });
-    _determinePosition();
+      });
+    }
   }
 
   @override
   void dispose() {
     _opacityController.dispose();
+    _loading.removeListener(_loadingListener);
     _markers.clear();
     super.dispose();
   }

@@ -4,7 +4,8 @@ import 'dart:math' as math;
 import 'package:lottie/lottie.dart';
 
 class TitleAnimation extends StatefulWidget {
-  const TitleAnimation({super.key});
+  final double width;
+  const TitleAnimation({super.key, required this.width});
 
   @override
   State<TitleAnimation> createState() => _TitleAnimationState();
@@ -41,11 +42,7 @@ class _TitleAnimationState extends State<TitleAnimation> with TickerProviderStat
           builder: (context, child) {
             return Transform.rotate(
               angle: _animationController.value * math.pi / 2,
-              child: Lottie.asset(
-                'assets/lottie/guime_title.json',
-                width: MediaQuery.of(context).size.width * 0.92,
-                height: MediaQuery.of(context).size.width * 0.92,
-              ),
+              child: Lottie.asset('assets/lottie/guime_title.json', width: widget.width, height: widget.width),
             );
           },
         ),
@@ -54,12 +51,8 @@ class _TitleAnimationState extends State<TitleAnimation> with TickerProviderStat
           builder: (context, child) {
             return Transform.rotate(
               angle: _animationController.value * math.pi / 2 + 1,
-              child: Lottie.asset(
-                'assets/lottie/guime_title.json',
-                controller: _lottieAnimation,
-                width: MediaQuery.of(context).size.width * 0.9,
-                height: MediaQuery.of(context).size.width * 0.9,
-              ),
+              child: Lottie.asset('assets/lottie/guime_title.json',
+                  controller: _lottieAnimation, width: widget.width, height: widget.width),
             );
           },
         ),

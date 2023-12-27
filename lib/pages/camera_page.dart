@@ -62,23 +62,27 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
     startPositionStream();
     _opacityController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _opacityAnimation = CurvedAnimation(parent: _opacityController, curve: Curves.easeInQuart);
-    _loading.addListener(() {
-      if (!_loading.value) {
-        Future.delayed(const Duration(milliseconds: 2500), () {
-          _opacityController.forward().whenComplete(() {
-            _opacityController.reset();
-            setState(() {
-              _visibleLoading = false;
-            });
+    _loading.addListener(_loadingListener);
+  }
+
+  void _loadingListener() {
+    if (!_loading.value) {
+      Future.delayed(const Duration(milliseconds: 2500), () {
+        if (!mounted) return;
+        _opacityController.forward().whenComplete(() {
+          _opacityController.reset();
+          setState(() {
+            _visibleLoading = false;
           });
         });
-      }
-    });
+      });
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _loading.removeListener(_loadingListener);
     _opacityController.dispose();
     controller?.dispose();
     stopPositionStream();
@@ -103,7 +107,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
 
   void startPositionStream() async {
     final PermissionStatus permission = await Permission.location.request();
-    if (permission == PermissionStatus.granted) {
+    if (permission != PermissionStatus.granted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           customSnackbar(
@@ -111,6 +115,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
             const Color(MyColors.red),
           ),
         );
+        Navigator.pop(context);
       }
       return;
     }
@@ -123,12 +128,14 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
       (Position position) {
         _loading.value = false;
         // ２点の座標から角度を計算
-        setState(() {
-          targetToAngle = calculateBearing(
-              position.latitude, position.longitude, widget.pin.position.latitude, widget.pin.position.longitude);
-          targetToDistance = calculateDistance(
-              position.latitude, position.longitude, widget.pin.position.latitude, widget.pin.position.longitude);
-        });
+        if (mounted) {
+          setState(() {
+            targetToAngle = calculateBearing(
+                position.latitude, position.longitude, widget.pin.position.latitude, widget.pin.position.longitude);
+            targetToDistance = calculateDistance(
+                position.latitude, position.longitude, widget.pin.position.latitude, widget.pin.position.longitude);
+          });
+        }
       },
     );
   }
@@ -139,6 +146,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
 
   @override
   Widget build(BuildContext context) {
+    final double w = MediaQuery.of(context).size.width;
+
     final List<Color> _backgroundColors = switch (widget.pin.type) {
       PinType.green => [
           const Color(MyColors.lightGreen1),
@@ -156,7 +165,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
           const Color(MyColors.lightRed3),
         ],
     };
-    final double w = MediaQuery.of(context).size.width;
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -216,8 +224,6 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
                     child: Text("Device does not have sensors !"),
                   );
                 }
-                print('direction : $direction');
-
                 final double angleDifference = calculateAngleDifference(direction, targetToAngle);
                 if (angleDifference < 0) {
                   _angle?.value = (360 + angleDifference) / 3.6;
@@ -267,13 +273,18 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
 
     if (cameraController == null || !cameraController.value.isInitialized) {
       return const Center(
-        child: Text(
-          'No camera',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 24.0,
-            fontWeight: FontWeight.bold,
-          ),
+        child: Column(
+          children: [
+            SizedBox(height: 300),
+            Text(
+              'No camera',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 24.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       );
     } else {
