@@ -47,17 +47,12 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>カメラへのアクセスを許可することで、カメラで探すが利用できます。</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>your usage description here</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>このアプリは、あなたの位置情報が必要です。</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>このアプリは、あなたの位置情報が常に必要です。</string>
+	<string>このアプリでは位置情報の許可が必要です。位置情報は、現在地の登録と確認、目的地の登録、方向と位置を確認するために使用します。例えば、現在地を登録し、移動した後に登録した位置を確認することができます。</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>このアプリは、あなたの位置情報が常に必要です</string>
-
+	<string>このアプリでは位置情報の許可が常に必要です。位置情報は、現在地の登録と確認、目的地の登録、方向と位置を確認するために使用します。例えば、現在地を登録し、移動した後に登録した位置を確認することができます。</string>
 	<key>NSLocationUsageDescription</key>
-    <string>古いデバイスは位置情報が必要です。</string> 
+    <string>このアプリでは位置情報の許可が必要です。位置情報は、現在地の登録と確認、目的地の登録、方向と位置を確認するために使用します。例えば、現在地を登録し、移動した後に登録した位置を確認することができます。</string>
 	<key>NSMotionUsageDescription</key>
 	<string>モーションデータは、アプリがコンパス機能をしよするのに必要です。</string>
 </dict>
