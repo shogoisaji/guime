@@ -206,7 +206,7 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
                                                   AppLocalizations.of(context)!.save_check,
                                                   textAlign: TextAlign.center,
                                                   style: const TextStyle(
-                                                    fontSize: 24,
+                                                    fontSize: 22,
                                                     fontWeight: FontWeight.bold,
                                                     color: Color(MyColors.darkGrey),
                                                   ),
