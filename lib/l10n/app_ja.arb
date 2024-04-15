@@ -1,0 +1,21 @@
+{
+  "@@locale":"ja",
+  "save_on_map":"マップで地点登録",
+  "current_position": "現在地\n登録",
+  "find":"探す",
+  "point_register":"登録したい地点を長押し",
+  "release_and_save":"はなして保存",
+  "caution":"歩きスマホは危険ですので\nお控えください",
+  "calibration":"8の字に動かすことで\n精度が向上します",
+  "location_permission":"位置情報の許可が必要です",
+  "camera_permission":"カメラの許可が必要です",
+  "camera_error":"カメラを認識できませんでした",
+  "no_register":"登録されていません",
+  "location_error":" 位置情報の取得に失敗しました",
+  "saved_location":"に地点登録しました",
+  "save_check":"この地点を登録しますか？",
+  "save":"保存",
+  "cancel":"キャンセル",
+  "save_date":"保存日時"
+}
+

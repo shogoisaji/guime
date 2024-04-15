@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:guime/models/pin_model.dart';
 import 'package:guime/services/location_permission_handler.dart';
 import 'package:guime/theme/color_theme.dart';
@@ -68,7 +71,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           customSnackbar(
-            '位置情報の許可が必要です',
+            AppLocalizations.of(context)!.location_permission,
             const Color(MyColors.red),
           ),
         );
@@ -90,11 +93,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
     _targetPosition = LatLng(widget.pin.position.latitude, widget.pin.position.longitude);
     BitmapDescriptor customIcon = await BitmapDescriptor.fromAssetImage(
       const ImageConfiguration(),
-      'assets/images/icon${pinIndex + 1}.png',
+      Platform.isIOS ? 'assets/images/icon${pinIndex + 1}.png' : 'assets/images/icon${pinIndex + 1}_a.png',
     );
     Set<Marker> markers = {
       Marker(
-        markerId: MarkerId("target"),
+        markerId: const MarkerId("target"),
         position: _targetPosition,
         icon: customIcon,
       ),
@@ -107,8 +110,9 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
+        top: false,
         child: _currentPosition == null
-            ? const Center()
+            ? const SizedBox.shrink()
             : Stack(
                 children: [
                   _loading.value
@@ -119,7 +123,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return const Center(child: CircularProgressIndicator());
                             } else if (snapshot.hasError) {
-                              return const Center(child: Text('エラーが発生しました'));
+                              return const Center(child: Text('Error'));
                             } else {
                               return SizedBox(
                                 width: MediaQuery.of(context).size.width,
@@ -162,14 +166,20 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                           },
                         )
                       : Container(),
-                  Positioned(
-                    top: 30,
-                    left: 10,
-                    child: InkWell(
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                        child: customBackButton()),
+                  SafeArea(
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: 25,
+                          left: 15,
+                          child: InkWell(
+                              onTap: () {
+                                Navigator.pop(context);
+                              },
+                              child: customBackButton()),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

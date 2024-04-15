@@ -1,0 +1,21 @@
+{
+  "@@locale":"en",
+  "save_on_map":"Save on Map",
+  "current_position": "Current\nPosition",
+  "find":"Find",
+  "point_register":"Press and hold the point",
+  "release_and_save":"Release and Save",
+  "caution":"Please refrain from walking on your phone as it is dangerous!",
+  "calibration":"Moving in a figure-8 motion improves accuracy",
+  "location_permission":"Location permission required",
+  "camera_permission":"Camera permission required",
+  "camera_error":"Failed to recognize camera",
+  "no_register":"Not registered",
+  "location_error":"Failed to recognize location",
+  "saved_location":"location registered in ",
+  "save_check":"Do you want to save the location?",
+  "save":"Save",
+  "cancel":"Cancel",
+  "save_date":"Save Date"
+}
+

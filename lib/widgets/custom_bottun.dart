@@ -22,7 +22,7 @@ Widget customButton({
       ),
       padding: const EdgeInsets.all(2),
       child: Container(
-        width: 120,
+        width: 125,
         height: 70,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),

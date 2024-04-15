@@ -43,7 +43,8 @@ class _TitleAnimationState extends State<TitleAnimation> with TickerProviderStat
           builder: (context, child) {
             return Transform.rotate(
               angle: _animationController.value * math.pi / 2,
-              child: Lottie.asset('assets/lottie/guime_title.json', width: widget.width, height: widget.width),
+              child: Lottie.asset('assets/lottie/guime_title.json',
+                  width: widget.width, height: widget.width, addRepaintBoundary: true),
             );
           },
         ),
@@ -53,7 +54,7 @@ class _TitleAnimationState extends State<TitleAnimation> with TickerProviderStat
             return Transform.rotate(
               angle: _animationController.value * math.pi / 2 + 1,
               child: Lottie.asset('assets/lottie/guime_title.json',
-                  controller: _lottieAnimation, width: widget.width, height: widget.width),
+                  controller: _lottieAnimation, width: widget.width, height: widget.width, addRepaintBoundary: true),
             );
           },
         ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:guime/models/pin_model.dart';
 import 'package:guime/services/location_permission_handler.dart';
 import 'package:guime/theme/color_theme.dart';
@@ -41,7 +42,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
   SMIInput<double>? _scaleX;
   SMIInput<double>? _scaleY;
 
-  ValueNotifier<bool> _loading = ValueNotifier(true);
+  final ValueNotifier<bool> _loading = ValueNotifier(true);
 
   void _onRiveInit(Artboard artboard) {
     final controller = StateMachineController.fromArtboard(
@@ -111,7 +112,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           customSnackbar(
-            '位置情報の許可が必要です',
+            AppLocalizations.of(context)!.location_permission,
             const Color(MyColors.red),
           ),
         );
@@ -122,7 +123,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           customSnackbar(
-            '位置情報の許可が必要です。',
+            AppLocalizations.of(context)!.location_permission,
             const Color(MyColors.red),
           ),
         );
@@ -158,8 +159,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
   @override
   Widget build(BuildContext context) {
     final double w = MediaQuery.of(context).size.width;
+    final double h = MediaQuery.of(context).size.height;
 
-    final List<Color> _backgroundColors = switch (widget.pin.type) {
+    final List<Color> backgroundColors = switch (widget.pin.type) {
       PinType.green => [
           const Color(MyColors.lightGreen1),
           const Color(MyColors.lightGreen2),
@@ -181,19 +183,25 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
         fit: StackFit.expand,
         children: [
           _lifecycleState == AppLifecycleState.resumed ? _cameraPreviewWidget() : Container(),
-
-          Align(
-            alignment: const Alignment(0, 01.3),
-            child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[0])),
-          ),
-          Align(
-            alignment: const Alignment(0, 1.5),
-            child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[1])),
-          ),
-          Align(
-            alignment: const Alignment(0, 1.7),
-            child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[2])),
-          ),
+          // SizedBox(
+          //     width: w,
+          //     height: w,
+          //     child: CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[0]))),
+          SizedBox(
+              width: w,
+              height: h,
+              child:
+                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[0], positionY: h * 0.65))),
+          SizedBox(
+              width: w,
+              height: h,
+              child:
+                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[1], positionY: h * 0.75))),
+          SizedBox(
+              width: w,
+              height: h,
+              child:
+                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[2], positionY: h * 0.85))),
           // 距離の表示
           Align(
             alignment: const Alignment(0, 0.63),
@@ -206,7 +214,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              const Text('Sava Date', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(AppLocalizations.of(context)!.save_date,
+                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
               Text(
                 DateFormat('yyyy.MM.dd HH:mm').format(widget.pin.position.timestamp),
                 style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
@@ -299,7 +308,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
         ),
       );
     } else if (cameraController.value.hasError) {
-      return Text('カメラエラー: ${cameraController.value.errorDescription}');
+      return Text('Error: ${cameraController.value.errorDescription}');
     } else {
       return CameraPreview(
         controller!,
