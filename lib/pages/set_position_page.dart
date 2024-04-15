@@ -227,6 +227,7 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
                                                                       ? 18
                                                                       : 24),
                                                         )),
+                                                        width: 120,
                                                         onTapped: () {
                                                           setState(() {
                                                             _markers.clear();
@@ -243,6 +244,7 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
                                                               fontWeight: FontWeight.bold,
                                                               fontSize: 24),
                                                         )),
+                                                        width: 120,
                                                         onTapped: () async {
                                                           final color = switch (widget.type) {
                                                             PinType.green => const Color(MyColors.green),
