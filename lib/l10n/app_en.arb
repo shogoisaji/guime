@@ -12,7 +12,7 @@
   "camera_error":"Failed to recognize camera",
   "no_register":"Not registered",
   "location_error":"Failed to recognize location",
-  "saved_location":"location registered in ",
+  "saved_location":"Location registered in ",
   "save_check":"Do you want to save the location?",
   "save":"Save",
   "cancel":"Cancel",

@@ -190,6 +190,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     final double w = MediaQuery.of(context).size.width > 500 ? 500 : MediaQuery.of(context).size.width;
+    final double painterWidth = MediaQuery.of(context).size.width;
     final double h = MediaQuery.of(context).size.height;
 
     final List<Color> backgroundColors = switch (_pinType) {
@@ -300,20 +301,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       body: Stack(
         children: [
           SizedBox(
-              width: w,
+              width: painterWidth,
               height: h,
-              child:
-                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[0], positionY: h * 0.65))),
+              child: CustomPaint(
+                  painter: LowerPatternPainter(width: painterWidth, color: backgroundColors[0], positionY: h * 0.65))),
           SizedBox(
-              width: w,
+              width: painterWidth,
               height: h,
-              child:
-                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[1], positionY: h * 0.75))),
+              child: CustomPaint(
+                  painter: LowerPatternPainter(width: painterWidth, color: backgroundColors[1], positionY: h * 0.75))),
           SizedBox(
-              width: w,
+              width: painterWidth,
               height: h,
-              child:
-                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[2], positionY: h * 0.85))),
+              child: CustomPaint(
+                  painter: LowerPatternPainter(width: painterWidth, color: backgroundColors[2], positionY: h * 0.85))),
           Align(
               alignment: const Alignment(0, -1.4),
               child: Opacity(
@@ -676,7 +677,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 ),
                 Container(
                   height: w * 0.4,
-                  width: w * 0.9,
+                  width: w * 0.99,
                   padding: const EdgeInsets.all(5),
                   margin: const EdgeInsets.symmetric(horizontal: 30),
                   decoration: BoxDecoration(
@@ -714,6 +715,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                             customButton(
                                 child: const Icon(Icons.map, color: Color(MyColors.lightBeige), size: 48),
                                 color: const Color(MyColors.darkGrey),
+                                width: 110,
                                 onTapped: () async {
                                   final isLocationGranted = await LocationPermissionsHandler().isGranted;
                                   if (!isLocationGranted) {
@@ -751,6 +753,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                             customButton(
                                 child: const Icon(Icons.camera_alt, color: Color(MyColors.lightBeige), size: 48),
                                 color: const Color(MyColors.darkGrey),
+                                width: 110,
                                 onTapped: () async {
                                   await CameraPermissionsHandler().request();
                                   final isLocationGranted = await LocationPermissionsHandler().isGranted;

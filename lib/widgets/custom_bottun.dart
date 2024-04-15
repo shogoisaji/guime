@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 Widget customButton({
   required Widget child,
   required VoidCallback onTapped,
+  required double width,
   Color? color,
 }) {
   return InkWell(
@@ -22,7 +23,7 @@ Widget customButton({
       ),
       padding: const EdgeInsets.all(2),
       child: Container(
-        width: 125,
+        width: width,
         height: 70,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
