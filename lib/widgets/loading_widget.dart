@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:guime/models/pin_model.dart';
 import 'package:guime/theme/color_theme.dart';
 import 'package:lottie/lottie.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class LoadingWidget extends StatefulWidget {
   final PinType type;
@@ -66,12 +67,30 @@ class _LoadingWidgetState extends State<LoadingWidget> with SingleTickerProvider
                     },
                   ),
                   widget.isCalibration
-                      ? Image.asset('assets/images/calibration.png', width: w * 0.6, fit: BoxFit.fitWidth)
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image.asset('assets/images/calibration1.png', width: w * 0.6, fit: BoxFit.fitWidth),
+                            Text(AppLocalizations.of(context)!.calibration,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    color: Color(MyColors.darkGrey), fontSize: 24, fontWeight: FontWeight.bold)),
+                          ],
+                        )
                       : Container(),
                   widget.isAttention
-                      ? Image.asset('assets/images/attention.png', width: w * 0.6, fit: BoxFit.fitWidth)
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image.asset('assets/images/attention1.png', width: w * 0.6, fit: BoxFit.fitWidth),
+                            Text(AppLocalizations.of(context)!.caution,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    color: Color(MyColors.darkGrey), fontSize: 24, fontWeight: FontWeight.bold)),
+                          ],
+                        )
                       : Container(),
-                  Lottie.asset('assets/lottie/loading.json', width: w / 2),
+                  Lottie.asset('assets/lottie/loading.json', width: w / 2, addRepaintBoundary: true),
                   const SizedBox(
                     height: 100,
                   ),

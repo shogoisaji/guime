@@ -31,7 +31,7 @@ Widget customBackButton() {
             ),
           ],
         ),
-        child: Icon(Icons.arrow_back, color: Colors.white, size: 36),
+        child: const Icon(Icons.arrow_back, color: Colors.white, size: 36),
       ),
     ),
   );

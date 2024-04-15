@@ -1,9 +1,16 @@
 import 'package:camera/camera.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'package:guime/animations/title_animation.dart';
 import 'package:guime/models/pin_model.dart';
 import 'package:guime/pages/camera_page.dart';
+import 'package:guime/pages/custom_license_page.dart';
 import 'package:guime/pages/map_page.dart';
 import 'package:guime/pages/set_position_page.dart';
 import 'package:guime/services/camera_permission_handler.dart';
@@ -13,17 +20,17 @@ import 'package:guime/theme/color_theme.dart';
 import 'package:guime/widgets/custom_bottun.dart';
 import 'package:guime/widgets/custom_snackbar.dart';
 import 'package:guime/widgets/lower_pattern_painter.dart';
-import 'package:intl/intl.dart';
-import 'package:flutter/services.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final Function onLanguageChanged;
+  const HomePage({super.key, required this.onLanguageChanged});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late AnimationController _animationController;
   final PageController _pageController = PageController(viewportFraction: 0.38, initialPage: 1);
   PinType _pinType = PinType.blue;
@@ -42,9 +49,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     if (_savingCurrentPosition) {
       return const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white));
     } else if (_isToggleOn) {
-      return const Text(
-        'RELEASE AND SAVE',
-        style: TextStyle(
+      return Text(
+        AppLocalizations.of(context)!.release_and_save,
+        style: const TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: Color(MyColors.darkGrey),
@@ -185,7 +192,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     final double w = MediaQuery.of(context).size.width > 500 ? 500 : MediaQuery.of(context).size.width;
     final double h = MediaQuery.of(context).size.height;
 
-    final List<Color> _backgroundColors = switch (_pinType) {
+    final List<Color> backgroundColors = switch (_pinType) {
       PinType.green => [
           const Color(MyColors.lightGreen1),
           const Color(MyColors.lightGreen2),
@@ -204,23 +211,111 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     };
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(MyColors.beige),
+      drawer: Drawer(
+        backgroundColor: const Color(MyColors.beige),
+        width: w * 0.6,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Image.asset(
+                'assets/images/header.png',
+                fit: BoxFit.fill,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.message, color: Color(MyColors.darkBlue)),
+              title: const Text('Licenses', style: TextStyle(color: Color(MyColors.darkBlue))),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const CustomLicensePage()));
+              },
+            ),
+            ListTile(
+              titleAlignment: ListTileTitleAlignment.top,
+              leading: const Icon(Icons.translate, color: Color(MyColors.darkBlue)),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Language', style: TextStyle(color: Color(MyColors.darkBlue))),
+                  const SizedBox(height: 8),
+                  Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(MyColors.darkBlue), width: 2),
+                      ),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              widget.onLanguageChanged('ja');
+                            },
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Icon(
+                                  Localizations.localeOf(context).languageCode == 'ja'
+                                      ? Icons.radio_button_checked
+                                      : Icons.circle_outlined,
+                                  color: const Color(MyColors.darkBlue),
+                                ),
+                                const Expanded(
+                                    child:
+                                        Center(child: Text('日本語', style: TextStyle(color: Color(MyColors.darkBlue))))),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () {
+                              widget.onLanguageChanged('en');
+                            },
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Icon(
+                                  Localizations.localeOf(context).languageCode == 'en'
+                                      ? Icons.radio_button_checked
+                                      : Icons.circle_outlined,
+                                  color: const Color(MyColors.darkBlue),
+                                ),
+                                const Expanded(
+                                    child: Center(
+                                        child: Text('English', style: TextStyle(color: Color(MyColors.darkBlue))))),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
       body: Stack(
         children: [
+          SizedBox(
+              width: w,
+              height: h,
+              child:
+                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[0], positionY: h * 0.65))),
+          SizedBox(
+              width: w,
+              height: h,
+              child:
+                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[1], positionY: h * 0.75))),
+          SizedBox(
+              width: w,
+              height: h,
+              child:
+                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[2], positionY: h * 0.85))),
           Align(
-            alignment: const Alignment(0, 01.1),
-            child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[0])),
-          ),
-          Align(
-            alignment: const Alignment(0, 1.3),
-            child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[1])),
-          ),
-          Align(
-            alignment: const Alignment(0, 1.5),
-            child: CustomPaint(painter: LowerPatternPainter(width: w, color: _backgroundColors[2])),
-          ),
-          Align(
-              alignment: const Alignment(0, -1.27),
+              alignment: const Alignment(0, -1.4),
               child: Opacity(
                 opacity: _centerLightOpacity,
                 child: Container(
@@ -246,7 +341,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 ),
               )),
           Align(
-            alignment: const Alignment(0.0, -1.4),
+            alignment: const Alignment(0.0, -1.6),
             child: TitleAnimation(width: w),
           ),
           SafeArea(
@@ -255,25 +350,33 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               children: [
                 SizedBox(
                   width: w * 0.85,
-                  height: 225,
+                  height: 235,
                   child: Column(
                     children: [
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'CURRENT\nPOSITION',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 16,
-                              height: 1.1,
-                              fontWeight: FontWeight.bold,
-                              color: Color(MyColors.darkGrey),
+                          IconButton(
+                              onPressed: () {
+                                _scaffoldKey.currentState?.openDrawer();
+                              },
+                              icon: const Icon(Icons.menu, color: Color(MyColors.darkGrey), size: 28)),
+                          SizedBox(
+                            width: 80,
+                            child: Text(
+                              AppLocalizations.of(context)!.current_position,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                height: 1.2,
+                                fontWeight: FontWeight.bold,
+                                color: Color(MyColors.darkGrey),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       SizedBox(
                         height: 180,
                         child: Row(
@@ -286,17 +389,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   onTap: () async {
                                     final isLocationGranted = await LocationPermissionsHandler().isGranted;
                                     if (!isLocationGranted) {
-                                      if (mounted) {
+                                      if (context.mounted) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           customSnackbar(
-                                            '位置情報の許可が必要です',
+                                            AppLocalizations.of(context)!.location_permission,
                                             const Color(MyColors.red),
                                           ),
                                         );
                                       }
                                       return;
                                     }
-                                    if (mounted) {
+                                    if (context.mounted) {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
@@ -334,13 +437,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                           ),
                                         ],
                                       ),
-                                      child: const Center(
+                                      child: Center(
                                         child: Text(
-                                          'SAVE ON MAP',
+                                          AppLocalizations.of(context)!.save_on_map,
                                           style: TextStyle(
-                                            fontSize: 26,
+                                            fontSize: Localizations.localeOf(context).languageCode == 'ja' ? 22 : 24,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(MyColors.lightBeige),
+                                            color: const Color(MyColors.lightBeige),
                                           ),
                                         ),
                                       ),
@@ -452,10 +555,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                           if (_isToggleOn) {
                                             final isLocationGranted = await LocationPermissionsHandler().isGranted;
                                             if (!isLocationGranted) {
-                                              if (mounted) {
+                                              if (context.mounted) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   customSnackbar(
-                                                    '位置情報の許可が必要です',
+                                                    AppLocalizations.of(context)!.location_permission,
                                                     const Color(MyColors.red),
                                                   ),
                                                 );
@@ -477,19 +580,21 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                                 PinType.red => const Color(MyColors.red),
                                                 PinType.blue => const Color(MyColors.blue)
                                               };
-                                              if (mounted) {
+                                              if (context.mounted) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   customSnackbar(
-                                                    '${saveType.toUpperCase()} に現在地を登録しました',
+                                                    Localizations.localeOf(context).languageCode == 'ja'
+                                                        ? '${saveType.toUpperCase()}${AppLocalizations.of(context)!.saved_location}'
+                                                        : '${AppLocalizations.of(context)!.saved_location}${saveType.toUpperCase()}',
                                                     color,
                                                   ),
                                                 );
                                               }
                                             } else if (saveType == null) {
-                                              if (mounted) {
+                                              if (context.mounted) {
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   customSnackbar(
-                                                    '位置情報の取得に失敗しました',
+                                                    AppLocalizations.of(context)!.location_error,
                                                     const Color(MyColors.red),
                                                   ),
                                                 );
@@ -542,7 +647,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     ],
                   ),
                 ),
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: h / 4,
                   child: PageView.builder(
@@ -594,9 +699,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        const Text(
-                          'FIND',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context)!.find,
+                          style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Color(MyColors.darkGrey),
@@ -612,10 +717,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                 onTapped: () async {
                                   final isLocationGranted = await LocationPermissionsHandler().isGranted;
                                   if (!isLocationGranted) {
-                                    if (mounted) {
+                                    if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         customSnackbar(
-                                          '位置情報の許可が必要です',
+                                          AppLocalizations.of(context)!.location_permission,
                                           const Color(MyColors.red),
                                         ),
                                       );
@@ -623,11 +728,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     return;
                                   }
                                   final Pin? pin = _pins[_pinType.toString().split('.')[1]];
-                                  if (mounted) {
+                                  if (context.mounted) {
                                     if (pin == null) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         customSnackbar(
-                                          '登録されていません',
+                                          AppLocalizations.of(context)!.no_register,
                                           const Color(MyColors.red),
                                         ),
                                       );
@@ -650,10 +755,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   await CameraPermissionsHandler().request();
                                   final isLocationGranted = await LocationPermissionsHandler().isGranted;
                                   if (!isLocationGranted) {
-                                    if (mounted) {
+                                    if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         customSnackbar(
-                                          '位置情報の許可が必要です',
+                                          AppLocalizations.of(context)!.location_permission,
                                           const Color(MyColors.red),
                                         ),
                                       );
@@ -662,10 +767,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   }
                                   final isCameraGranted = await CameraPermissionsHandler().isGranted;
                                   if (!isCameraGranted) {
-                                    if (mounted) {
+                                    if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         customSnackbar(
-                                          'カメラの許可が必要です',
+                                          AppLocalizations.of(context)!.camera_permission,
                                           const Color(MyColors.red),
                                         ),
                                       );
@@ -673,10 +778,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     return;
                                   }
                                   if (cameras.isEmpty) {
-                                    if (mounted) {
+                                    if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         customSnackbar(
-                                          'カメラを認識できませんでした',
+                                          AppLocalizations.of(context)!.camera_error,
                                           const Color(MyColors.red),
                                         ),
                                       );
@@ -684,11 +789,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     return;
                                   }
                                   final Pin? pin = _pins[_pinType.toString().split('.')[1]];
-                                  if (mounted) {
+                                  if (context.mounted) {
                                     if (pin == null) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         customSnackbar(
-                                          '登録されていません',
+                                          AppLocalizations.of(context)!.no_register,
                                           const Color(MyColors.red),
                                         ),
                                       );

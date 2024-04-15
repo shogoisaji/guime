@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:guime/models/pin_model.dart';
-import 'package:guime/pages/home_page.dart';
 import 'package:guime/services/location_permission_handler.dart';
 import 'package:guime/services/shared_preferences_helper.dart';
 import 'package:guime/theme/color_theme.dart';
@@ -29,7 +30,7 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
   final Set<Marker> _markers = {};
   bool _visibleLoading = true;
 
-  ValueNotifier<bool> _loading = ValueNotifier(true);
+  final ValueNotifier<bool> _loading = ValueNotifier(true);
 
   Future<void> _determinePosition() async {
     final isLocationGranted = await LocationPermissionsHandler().isGranted;
@@ -37,7 +38,7 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           customSnackbar(
-            '位置情報の許可が必要です',
+            AppLocalizations.of(context)!.location_permission,
             const Color(MyColors.red),
           ),
         );
@@ -121,8 +122,9 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
 
     return Scaffold(
         body: SafeArea(
+      top: false,
       child: _currentPosition == null
-          ? const Center()
+          ? const SizedBox.shrink()
           : Stack(
               children: [
                 _loading.value
@@ -200,10 +202,11 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
                                             child: Column(
                                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                                               children: [
-                                                const Text(
-                                                  'この地点を登録しますか？',
-                                                  style: TextStyle(
-                                                    fontSize: 20,
+                                                Text(
+                                                  AppLocalizations.of(context)!.save_check,
+                                                  textAlign: TextAlign.center,
+                                                  style: const TextStyle(
+                                                    fontSize: 24,
                                                     fontWeight: FontWeight.bold,
                                                     color: Color(MyColors.darkGrey),
                                                   ),
@@ -213,13 +216,16 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
                                                   children: [
                                                     customButton(
                                                         color: const Color(MyColors.darkGrey),
-                                                        child: const Center(
+                                                        child: Center(
                                                             child: Text(
-                                                          'Cancel',
+                                                          AppLocalizations.of(context)!.cancel,
                                                           style: TextStyle(
-                                                              color: Color(MyColors.beige),
+                                                              color: const Color(MyColors.beige),
                                                               fontWeight: FontWeight.bold,
-                                                              fontSize: 24),
+                                                              fontSize:
+                                                                  Localizations.localeOf(context).languageCode == 'ja'
+                                                                      ? 18
+                                                                      : 24),
                                                         )),
                                                         onTapped: () {
                                                           setState(() {
@@ -229,10 +235,10 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
                                                         }),
                                                     customButton(
                                                         color: const Color(MyColors.darkGrey),
-                                                        child: const Center(
+                                                        child: Center(
                                                             child: Text(
-                                                          'Save',
-                                                          style: TextStyle(
+                                                          AppLocalizations.of(context)!.save,
+                                                          style: const TextStyle(
                                                               color: Color(MyColors.beige),
                                                               fontWeight: FontWeight.bold,
                                                               fontSize: 24),
@@ -247,15 +253,13 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
                                                               position.latitude, position.longitude);
                                                           _markers.clear();
                                                           if (mounted) {
-                                                            ScaffoldMessenger.of(context).showSnackBar(
-                                                              customSnackbar(
-                                                                  '${saveType.toUpperCase()} の地点を登録しました', color),
-                                                            );
-                                                            Navigator.push(
-                                                                context,
-                                                                MaterialPageRoute(
-                                                                  builder: (context) => const HomePage(),
-                                                                ));
+                                                            ScaffoldMessenger.of(context).showSnackBar(customSnackbar(
+                                                              Localizations.localeOf(context).languageCode == 'ja'
+                                                                  ? '${saveType.toUpperCase()}${AppLocalizations.of(context)!.saved_location}'
+                                                                  : '${AppLocalizations.of(context)!.saved_location}${saveType.toUpperCase()}',
+                                                              color,
+                                                            ));
+                                                            Navigator.pushNamed(context, '/');
                                                           }
                                                         }),
                                                   ],
@@ -287,10 +291,10 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
                         ),
                       ),
                 Align(
-                  alignment: const Alignment(0, 0.9),
+                  alignment: const Alignment(0, 0.83),
                   child: Container(
-                    height: 70,
-                    margin: const EdgeInsets.symmetric(horizontal: 32),
+                    height: 60,
+                    margin: const EdgeInsets.symmetric(horizontal: 36),
                     decoration: BoxDecoration(
                       color: backgroundColor,
                       borderRadius: const BorderRadius.all(
@@ -299,10 +303,10 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
                     ),
                     child: Stack(
                       children: [
-                        const Center(
+                        Center(
                           child: Text(
-                            '登録したい地点を長押',
-                            style: TextStyle(
+                            AppLocalizations.of(context)!.point_register,
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Color(MyColors.darkBlue),
@@ -344,14 +348,20 @@ class _SetPositionPageState extends State<SetPositionPage> with SingleTickerProv
                         },
                       )
                     : Container(),
-                Positioned(
-                  top: 30,
-                  left: 10,
-                  child: InkWell(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: customBackButton()),
+                SafeArea(
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        top: 25,
+                        left: 15,
+                        child: InkWell(
+                            onTap: () {
+                              Navigator.pop(context);
+                            },
+                            child: customBackButton()),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -45,4 +45,12 @@ class SharedPreferencesHelper {
     }
     return pins;
   }
+
+  Future<String?> loadSavedLanguage() async {
+    return _prefs!.getString('language');
+  }
+
+  Future<void> saveLanguage(String language) async {
+    _prefs!.setString('language', language);
+  }
 }
