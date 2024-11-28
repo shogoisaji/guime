@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
@@ -304,17 +305,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               width: painterWidth,
               height: h,
               child: CustomPaint(
-                  painter: LowerPatternPainter(width: painterWidth, color: backgroundColors[0], positionY: h * 0.65))),
+                  painter: LowerPatternPainter(width: h / 2, color: backgroundColors[0], positionY: h * 0.6))),
           SizedBox(
               width: painterWidth,
               height: h,
               child: CustomPaint(
-                  painter: LowerPatternPainter(width: painterWidth, color: backgroundColors[1], positionY: h * 0.75))),
+                  painter: LowerPatternPainter(width: h / 2, color: backgroundColors[1], positionY: h * 0.7))),
           SizedBox(
               width: painterWidth,
               height: h,
               child: CustomPaint(
-                  painter: LowerPatternPainter(width: painterWidth, color: backgroundColors[2], positionY: h * 0.85))),
+                  painter: LowerPatternPainter(width: h / 2, color: backgroundColors[2], positionY: h * 0.8))),
           Align(
               alignment: const Alignment(0, -1.4),
               child: Opacity(
@@ -713,7 +714,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             customButton(
-                                child: const Icon(Icons.map, color: Color(MyColors.lightBeige), size: 48),
+                                child: const Center(
+                                  child: FaIcon(FontAwesomeIcons.mapLocationDot,
+                                      color: Color(MyColors.lightBeige), size: 42),
+                                ),
                                 color: const Color(MyColors.darkGrey),
                                 width: 110,
                                 onTapped: () async {

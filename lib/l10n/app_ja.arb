@@ -4,7 +4,7 @@
   "current_position": "現在地\n登録",
   "find":"探す",
   "point_register":"登録したい地点を長押し",
-  "release_and_save":"はなして保存",
+  "release_and_save":"はなして登録",
   "caution":"歩きスマホは危険ですので\nお控えください",
   "calibration":"8の字に動かすことで\n精度が向上します",
   "location_permission":"位置情報の許可が必要です",

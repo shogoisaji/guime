@@ -183,25 +183,21 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver, Si
         fit: StackFit.expand,
         children: [
           _lifecycleState == AppLifecycleState.resumed ? _cameraPreviewWidget() : Container(),
-          // SizedBox(
-          //     width: w,
-          //     height: w,
-          //     child: CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[0]))),
           SizedBox(
               width: w,
               height: h,
-              child:
-                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[0], positionY: h * 0.65))),
+              child: CustomPaint(
+                  painter: LowerPatternPainter(width: h / 2, color: backgroundColors[0], positionY: h * 0.7))),
           SizedBox(
               width: w,
               height: h,
-              child:
-                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[1], positionY: h * 0.75))),
+              child: CustomPaint(
+                  painter: LowerPatternPainter(width: h / 2, color: backgroundColors[1], positionY: h * 0.8))),
           SizedBox(
               width: w,
               height: h,
-              child:
-                  CustomPaint(painter: LowerPatternPainter(width: w, color: backgroundColors[2], positionY: h * 0.85))),
+              child: CustomPaint(
+                  painter: LowerPatternPainter(width: h / 2, color: backgroundColors[2], positionY: h * 0.9))),
           // 距離の表示
           Align(
             alignment: const Alignment(0, 0.63),
