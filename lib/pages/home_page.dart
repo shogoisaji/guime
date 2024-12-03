@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:guime/widgets/ad_banner.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -30,15 +31,21 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late AnimationController _animationController;
-  final PageController _pageController = PageController(viewportFraction: 0.38, initialPage: 1);
+  final PageController _pageController =
+      PageController(viewportFraction: 0.38, initialPage: 1);
   PinType _pinType = PinType.blue;
   double _centerLightOpacity = 1.0;
   final List<double> _pinScale = [0.75, 1.0, 0.75];
   final List<double> _pinAngles = [-0.3, 0.0, 0.3];
-  final List<Offset> _pinTranslates = [const Offset(50, 50), const Offset(0, 0), const Offset(-50, 50)];
+  final List<Offset> _pinTranslates = [
+    const Offset(50, 50),
+    const Offset(0, 0),
+    const Offset(-50, 50)
+  ];
   late List<CameraDescription> cameras;
   Map<String, Pin?> _pins = {};
   double _dragPositionY = 0.0;
@@ -48,7 +55,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   Widget _setDisplayText() {
     if (_savingCurrentPosition) {
-      return const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white));
+      return const CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white));
     } else if (_isToggleOn) {
       return Text(
         AppLocalizations.of(context)!.release_and_save,
@@ -61,7 +69,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     } else {
       return Text(
         _pins[_pinType.toString().split('.')[1]] != null
-            ? DateFormat('yyyy.MM.dd HH:mm').format(_pins[_pinType.toString().split('.')[1]]!.position.timestamp)
+            ? DateFormat('yyyy.MM.dd HH:mm').format(
+                _pins[_pinType.toString().split('.')[1]]!.position.timestamp)
             : '-',
         style: const TextStyle(
           fontSize: 20,
@@ -81,16 +90,20 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         _pinScale[2] = (_pageController.page! % 1) / 4 + 0.75;
         _pinAngles[1] = -(_pageController.page! % 1) / 3;
         _pinAngles[2] = (1 - (_pageController.page! % 1)) / 3;
-        _pinTranslates[1] = Offset((_pageController.page! % 1) * 50, (_pageController.page! % 1) * 50);
-        _pinTranslates[2] = Offset(-50 + (_pageController.page! % 1) * 50, 50 - (_pageController.page! % 1) * 50);
+        _pinTranslates[1] = Offset(
+            (_pageController.page! % 1) * 50, (_pageController.page! % 1) * 50);
+        _pinTranslates[2] = Offset(-50 + (_pageController.page! % 1) * 50,
+            50 - (_pageController.page! % 1) * 50);
       }
       if (_pageController.page! ~/ 1 == 0) {
         _pinScale[0] = 1 - (_pageController.page! % 1) / 4;
         _pinScale[1] = (_pageController.page! % 1) / 4 + 0.75;
         _pinAngles[0] = -(_pageController.page! % 1) / 3;
         _pinAngles[1] = (1 - (_pageController.page! % 1)) / 3;
-        _pinTranslates[0] = Offset((_pageController.page! % 1) * 50, (_pageController.page! % 1) * 50);
-        _pinTranslates[1] = Offset(-50 + (_pageController.page! % 1) * 50, 50 - (_pageController.page! % 1) * 50);
+        _pinTranslates[0] = Offset(
+            (_pageController.page! % 1) * 50, (_pageController.page! % 1) * 50);
+        _pinTranslates[1] = Offset(-50 + (_pageController.page! % 1) * 50,
+            50 - (_pageController.page! % 1) * 50);
       }
     }
     if (_pageController.hasClients) {
@@ -161,7 +174,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   initState() {
     super.initState();
     LocationPermissionsHandler().request();
-    _animationController = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
+    _animationController = AnimationController(
+        duration: const Duration(milliseconds: 500), vsync: this);
     _animationController.addListener(() {
       setState(() {
         _dragPositionY = _animationController.value * 110;
@@ -173,7 +187,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   void _resetToggle() {
-    _animationController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
+    _animationController.animateTo(0.0,
+        duration: const Duration(milliseconds: 300), curve: Curves.easeIn);
     setState(() {
       _isToggleOn = false;
       _dragPositionY = _animationController.value * 110;
@@ -190,7 +205,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final double w = MediaQuery.of(context).size.width > 500 ? 500 : MediaQuery.of(context).size.width;
+    final double w = MediaQuery.of(context).size.width > 500
+        ? 500
+        : MediaQuery.of(context).size.width;
     final double painterWidth = MediaQuery.of(context).size.width;
     final double h = MediaQuery.of(context).size.height;
 
@@ -229,26 +246,34 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.message, color: Color(MyColors.darkBlue)),
-              title: const Text('Licenses', style: TextStyle(color: Color(MyColors.darkBlue))),
+              leading:
+                  const Icon(Icons.message, color: Color(MyColors.darkBlue)),
+              title: const Text('Licenses',
+                  style: TextStyle(color: Color(MyColors.darkBlue))),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const CustomLicensePage()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const CustomLicensePage()));
               },
             ),
             ListTile(
               titleAlignment: ListTileTitleAlignment.top,
-              leading: const Icon(Icons.translate, color: Color(MyColors.darkBlue)),
+              leading:
+                  const Icon(Icons.translate, color: Color(MyColors.darkBlue)),
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Language', style: TextStyle(color: Color(MyColors.darkBlue))),
+                  const Text('Language',
+                      style: TextStyle(color: Color(MyColors.darkBlue))),
                   const SizedBox(height: 8),
                   Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(MyColors.darkBlue), width: 2),
+                        border: Border.all(
+                            color: const Color(MyColors.darkBlue), width: 2),
                       ),
                       child: Column(
                         children: [
@@ -260,14 +285,19 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Icon(
-                                  Localizations.localeOf(context).languageCode == 'ja'
+                                  Localizations.localeOf(context)
+                                              .languageCode ==
+                                          'ja'
                                       ? Icons.radio_button_checked
                                       : Icons.circle_outlined,
                                   color: const Color(MyColors.darkBlue),
                                 ),
                                 const Expanded(
-                                    child:
-                                        Center(child: Text('日本語', style: TextStyle(color: Color(MyColors.darkBlue))))),
+                                    child: Center(
+                                        child: Text('日本語',
+                                            style: TextStyle(
+                                                color: Color(
+                                                    MyColors.darkBlue))))),
                               ],
                             ),
                           ),
@@ -280,14 +310,19 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Icon(
-                                  Localizations.localeOf(context).languageCode == 'en'
+                                  Localizations.localeOf(context)
+                                              .languageCode ==
+                                          'en'
                                       ? Icons.radio_button_checked
                                       : Icons.circle_outlined,
                                   color: const Color(MyColors.darkBlue),
                                 ),
                                 const Expanded(
                                     child: Center(
-                                        child: Text('English', style: TextStyle(color: Color(MyColors.darkBlue))))),
+                                        child: Text('English',
+                                            style: TextStyle(
+                                                color: Color(
+                                                    MyColors.darkBlue))))),
                               ],
                             ),
                           ),
@@ -305,17 +340,26 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               width: painterWidth,
               height: h,
               child: CustomPaint(
-                  painter: LowerPatternPainter(width: h / 2, color: backgroundColors[0], positionY: h * 0.6))),
+                  painter: LowerPatternPainter(
+                      width: h / 2,
+                      color: backgroundColors[0],
+                      positionY: h * 0.6))),
           SizedBox(
               width: painterWidth,
               height: h,
               child: CustomPaint(
-                  painter: LowerPatternPainter(width: h / 2, color: backgroundColors[1], positionY: h * 0.7))),
+                  painter: LowerPatternPainter(
+                      width: h / 2,
+                      color: backgroundColors[1],
+                      positionY: h * 0.7))),
           SizedBox(
               width: painterWidth,
               height: h,
               child: CustomPaint(
-                  painter: LowerPatternPainter(width: h / 2, color: backgroundColors[2], positionY: h * 0.8))),
+                  painter: LowerPatternPainter(
+                      width: h / 2,
+                      color: backgroundColors[2],
+                      positionY: h * 0.8))),
           Align(
               alignment: const Alignment(0, -1.4),
               child: Opacity(
@@ -362,7 +406,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               onPressed: () {
                                 _scaffoldKey.currentState?.openDrawer();
                               },
-                              icon: const Icon(Icons.menu, color: Color(MyColors.darkGrey), size: 28)),
+                              icon: const Icon(Icons.menu,
+                                  color: Color(MyColors.darkGrey), size: 28)),
                           SizedBox(
                             width: 80,
                             child: Text(
@@ -389,12 +434,16 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               children: [
                                 InkWell(
                                   onTap: () async {
-                                    final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                    final isLocationGranted =
+                                        await LocationPermissionsHandler()
+                                            .isGranted;
                                     if (!isLocationGranted) {
                                       if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
                                           customSnackbar(
-                                            AppLocalizations.of(context)!.location_permission,
+                                            AppLocalizations.of(context)!
+                                                .location_permission,
                                             const Color(MyColors.red),
                                           ),
                                         );
@@ -405,7 +454,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) => SetPositionPage(
+                                            builder: (context) =>
+                                                SetPositionPage(
                                                   type: _pinType,
                                                 )),
                                       );
@@ -429,10 +479,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                       width: w * 0.6,
                                       height: w * 0.15,
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(100),
+                                        borderRadius:
+                                            BorderRadius.circular(100),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.white.withOpacity(0.3),
+                                            color:
+                                                Colors.white.withOpacity(0.3),
                                             spreadRadius: -0.1,
                                             blurRadius: 5,
                                             offset: const Offset(0, -3),
@@ -441,11 +493,18 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                       ),
                                       child: Center(
                                         child: Text(
-                                          AppLocalizations.of(context)!.save_on_map,
+                                          AppLocalizations.of(context)!
+                                              .save_on_map,
                                           style: TextStyle(
-                                            fontSize: Localizations.localeOf(context).languageCode == 'ja' ? 22 : 24,
+                                            fontSize:
+                                                Localizations.localeOf(context)
+                                                            .languageCode ==
+                                                        'ja'
+                                                    ? 22
+                                                    : 24,
                                             fontWeight: FontWeight.bold,
-                                            color: const Color(MyColors.lightBeige),
+                                            color: const Color(
+                                                MyColors.lightBeige),
                                           ),
                                         ),
                                       ),
@@ -457,7 +516,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   height: w * 0.15,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(100),
-                                    color: _isToggleOn ? const Color(MyColors.darkOrange) : Colors.black26,
+                                    color: _isToggleOn
+                                        ? const Color(MyColors.darkOrange)
+                                        : Colors.black26,
                                   ),
                                   padding: const EdgeInsets.all(5),
                                   child: Container(
@@ -467,7 +528,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                         BoxShadow(
                                           color: _isToggleOn
                                               ? const Color(MyColors.orange)
-                                              : const Color(MyColors.lightBeige),
+                                              : const Color(
+                                                  MyColors.lightBeige),
                                           blurRadius: 4,
                                           spreadRadius: -0.1,
                                           offset: const Offset(0, 0),
@@ -486,7 +548,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               margin: const EdgeInsets.only(right: 5),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(100),
-                                color: _isToggleOn ? const Color(MyColors.darkOrange) : Colors.black26,
+                                color: _isToggleOn
+                                    ? const Color(MyColors.darkOrange)
+                                    : Colors.black26,
                               ),
                               padding: const EdgeInsets.all(5),
                               child: Container(
@@ -494,8 +558,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   borderRadius: BorderRadius.circular(100),
                                   boxShadow: [
                                     BoxShadow(
-                                      color:
-                                          _isToggleOn ? const Color(MyColors.orange) : const Color(MyColors.lightBeige),
+                                      color: _isToggleOn
+                                          ? const Color(MyColors.orange)
+                                          : const Color(MyColors.lightBeige),
                                       blurRadius: 4,
                                       spreadRadius: -0.1,
                                       offset: const Offset(0, 0),
@@ -508,7 +573,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                         top: 90,
                                         left: 12.5,
                                         child: Opacity(
-                                          opacity: 1 - _animationController.value,
+                                          opacity:
+                                              1 - _animationController.value,
                                           child: Image.asset(
                                             'assets/images/arrow.png',
                                             width: 35,
@@ -525,7 +591,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                           shape: BoxShape.circle,
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(0.7),
+                                              color:
+                                                  Colors.black.withOpacity(0.7),
                                               spreadRadius: 0.5,
                                               blurRadius: 3,
                                               offset: const Offset(0, 1),
@@ -539,7 +606,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                             shape: BoxShape.circle,
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Colors.white.withOpacity(0.3),
+                                                color: Colors.white
+                                                    .withOpacity(0.3),
                                                 spreadRadius: -0.1,
                                                 blurRadius: 5,
                                                 offset: const Offset(0, -3),
@@ -555,12 +623,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                       child: Draggable(
                                         onDragEnd: (details) async {
                                           if (_isToggleOn) {
-                                            final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                            final isLocationGranted =
+                                                await LocationPermissionsHandler()
+                                                    .isGranted;
                                             if (!isLocationGranted) {
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
                                                   customSnackbar(
-                                                    AppLocalizations.of(context)!.location_permission,
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .location_permission,
                                                     const Color(MyColors.red),
                                                   ),
                                                 );
@@ -574,18 +647,26 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                             setState(() {
                                               _savingCurrentPosition = true;
                                             });
-                                            final String? saveType = await _saveCurrentPosition();
+                                            final String? saveType =
+                                                await _saveCurrentPosition();
                                             if (saveType != null) {
                                               _loadAllPin();
                                               final color = switch (_pinType) {
-                                                PinType.green => const Color(MyColors.green),
-                                                PinType.red => const Color(MyColors.red),
-                                                PinType.blue => const Color(MyColors.blue)
+                                                PinType.green =>
+                                                  const Color(MyColors.green),
+                                                PinType.red =>
+                                                  const Color(MyColors.red),
+                                                PinType.blue =>
+                                                  const Color(MyColors.blue)
                                               };
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
                                                   customSnackbar(
-                                                    Localizations.localeOf(context).languageCode == 'ja'
+                                                    Localizations.localeOf(
+                                                                    context)
+                                                                .languageCode ==
+                                                            'ja'
                                                         ? '${saveType.toUpperCase()}${AppLocalizations.of(context)!.saved_location}'
                                                         : '${AppLocalizations.of(context)!.saved_location}${saveType.toUpperCase()}',
                                                     color,
@@ -594,9 +675,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                               }
                                             } else if (saveType == null) {
                                               if (context.mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
                                                   customSnackbar(
-                                                    AppLocalizations.of(context)!.location_error,
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .location_error,
                                                     const Color(MyColors.red),
                                                   ),
                                                 );
@@ -610,11 +694,16 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                           _resetToggle();
                                         },
                                         onDragUpdate: (details) {
-                                          _animationController.value = _dragPositionY / 110;
+                                          _animationController.value =
+                                              _dragPositionY / 110;
                                           setState(() {
                                             _dragPositionY += details.delta.dy;
-                                            if (_dragPositionY > 110) _dragPositionY = 110;
-                                            if (_dragPositionY < 0) _dragPositionY = 0;
+                                            if (_dragPositionY > 110) {
+                                              _dragPositionY = 110;
+                                            }
+                                            if (_dragPositionY < 0) {
+                                              _dragPositionY = 0;
+                                            }
                                             if (_dragPositionY > 100) {
                                               _isToggleOn = true;
                                               if (_isFeedback) {
@@ -716,29 +805,37 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                             customButton(
                                 child: const Center(
                                   child: FaIcon(FontAwesomeIcons.mapLocationDot,
-                                      color: Color(MyColors.lightBeige), size: 42),
+                                      color: Color(MyColors.lightBeige),
+                                      size: 42),
                                 ),
                                 color: const Color(MyColors.darkGrey),
                                 width: 110,
                                 onTapped: () async {
-                                  final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                  final isLocationGranted =
+                                      await LocationPermissionsHandler()
+                                          .isGranted;
                                   if (!isLocationGranted) {
                                     if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         customSnackbar(
-                                          AppLocalizations.of(context)!.location_permission,
+                                          AppLocalizations.of(context)!
+                                              .location_permission,
                                           const Color(MyColors.red),
                                         ),
                                       );
                                     }
                                     return;
                                   }
-                                  final Pin? pin = _pins[_pinType.toString().split('.')[1]];
+                                  final Pin? pin =
+                                      _pins[_pinType.toString().split('.')[1]];
                                   if (context.mounted) {
                                     if (pin == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         customSnackbar(
-                                          AppLocalizations.of(context)!.no_register,
+                                          AppLocalizations.of(context)!
+                                              .no_register,
                                           const Color(MyColors.red),
                                         ),
                                       );
@@ -755,29 +852,39 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   }
                                 }),
                             customButton(
-                                child: const Icon(Icons.camera_alt, color: Color(MyColors.lightBeige), size: 48),
+                                child: const Icon(Icons.camera_alt,
+                                    color: Color(MyColors.lightBeige),
+                                    size: 48),
                                 color: const Color(MyColors.darkGrey),
                                 width: 110,
                                 onTapped: () async {
                                   await CameraPermissionsHandler().request();
-                                  final isLocationGranted = await LocationPermissionsHandler().isGranted;
+                                  final isLocationGranted =
+                                      await LocationPermissionsHandler()
+                                          .isGranted;
                                   if (!isLocationGranted) {
                                     if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         customSnackbar(
-                                          AppLocalizations.of(context)!.location_permission,
+                                          AppLocalizations.of(context)!
+                                              .location_permission,
                                           const Color(MyColors.red),
                                         ),
                                       );
                                     }
                                     return;
                                   }
-                                  final isCameraGranted = await CameraPermissionsHandler().isGranted;
+                                  final isCameraGranted =
+                                      await CameraPermissionsHandler()
+                                          .isGranted;
                                   if (!isCameraGranted) {
                                     if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         customSnackbar(
-                                          AppLocalizations.of(context)!.camera_permission,
+                                          AppLocalizations.of(context)!
+                                              .camera_permission,
                                           const Color(MyColors.red),
                                         ),
                                       );
@@ -786,21 +893,26 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                   }
                                   if (cameras.isEmpty) {
                                     if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         customSnackbar(
-                                          AppLocalizations.of(context)!.camera_error,
+                                          AppLocalizations.of(context)!
+                                              .camera_error,
                                           const Color(MyColors.red),
                                         ),
                                       );
                                     }
                                     return;
                                   }
-                                  final Pin? pin = _pins[_pinType.toString().split('.')[1]];
+                                  final Pin? pin =
+                                      _pins[_pinType.toString().split('.')[1]];
                                   if (context.mounted) {
                                     if (pin == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         customSnackbar(
-                                          AppLocalizations.of(context)!.no_register,
+                                          AppLocalizations.of(context)!
+                                              .no_register,
                                           const Color(MyColors.red),
                                         ),
                                       );
@@ -827,6 +939,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               ],
             ),
           ),
+          Container(
+            height: MediaQuery.of(context).padding.top,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              color: Color(MyColors.darkGrey),
+            ),
+          ),
           IgnorePointer(
             child: Opacity(
               opacity: 0.8,
@@ -837,6 +956,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 fit: BoxFit.fill,
               ),
             ),
+          ),
+          Column(
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).padding.top,
+                width: double.infinity,
+              ),
+              AdBanner(width: MediaQuery.of(context).size.width)
+            ],
           ),
         ],
       ),
