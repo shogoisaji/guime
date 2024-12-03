@@ -30,6 +30,8 @@ dependencies:
   riverpod_annotation:
   flutter_hooks:
   font_awesome_flutter:
+  google_mobile_ads:
+  app_tracking_transparency:
 
 dev_dependencies:
   flutter_test:
